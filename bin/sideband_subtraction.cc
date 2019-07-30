@@ -36,8 +36,8 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
 
 int main(){
 
-  TString input_file_data = "/home/t3cms/ev19u033/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
-  TString input_file_mc = "/home/t3cms/ev19u033/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_pthatweight.root";
+  TString input_file_data = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
+  TString input_file_mc = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_mc_ntKp_PbPb_2018_pthatweight.root";
 
 std::vector<TH1D*> histos_data;
 std::vector<TH1D*> histos_mc;
@@ -293,48 +293,42 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
 
 
   std::cout<< "n in create_histogram = "<< n <<std::endl;
-  TH1D* dist_side = (TH1D*) reduced->createHistogram("dist_side",var, Binning(n, var.getMin(), var.getMax()));
+  TH1D* dist_side = (TH1D*)reduced->createHistogram("dist_side",var, Binning(n, var.getMin(), var.getMax()));
   dist_side->SetMarkerColor(kBlue);
   dist_side->SetLineColor(kBlue);
   dist_side->SetNameTitle("dist_side", "Signal and Background Distributions");
 
-  TH1D* hist_dist_peak = (TH1D*) central->createHistogram(var.GetName(), var, Binning(n, var.getMin(), var.getMax()));
+  TH1D* hist_dist_peak = (TH1D*)central->createHistogram(var.GetName(), var, Binning(n, var.getMin(), var.getMax()));
   TH1D* dist_peak = new TH1D(*hist_dist_peak);
-
   dist_peak->SetMarkerColor(kRed);
   dist_peak->SetLineColor(kRed);
   dist_peak->SetNameTitle(var.GetName(), "Signal and Background Distributions");
 
-
   //if(mc==1) histos.push_back(pt_dist_peak);
 
-  TH1D* dist_total = (TH1D*) total->createHistogram("dist_total",var, Binning(n, var.getMin(), var.getMax()));
-  dist_total->SetMarkerColor(kBlack);
-  dist_total->SetLineColor(kBlack);
-  dist_total->SetNameTitle("dist_total", "Signal and Background Distributions");
-
-
+  //TH1D* dist_total = (TH1D*) total->createHistogram("dist_total",var, Binning(n, var.getMin(), var.getMax()));
+  hist_dist_peak->SetMarkerColor(kBlack);
+  hist_dist_peak->SetLineColor(kBlack);
+  hist_dist_peak->SetNameTitle("dist_total", "Signal and Background Distributions");
 
   dist_peak->Add(dist_side, -factor);
-
-
-
-  dist_side->Add(dist_side, factor);
-
-
+  //dist_side->Add(dist_side, factor);
+  dist_side->Scale(factor);
 
   dist_peak->SetStats(0);
   dist_side->SetStats(0);
-  dist_total->SetStats(0);
+  hist_dist_peak->SetStats(0);
   TCanvas c;
 
-  dist_total->Draw();
+  hist_dist_peak->Draw();
   dist_side->Draw("same");
   dist_peak->Draw("same");
+
   dist_peak->SetXTitle(var.GetName());
   dist_side->SetXTitle(var.GetName());
-  dist_total->SetXTitle(var.GetName());
+  hist_dist_peak->SetXTitle(var.GetName());
   //pt_dist_total->GetYaxis()->SetRangeUser(-1500.,70000.);
+  hist_dist_peak->GetYaxis()->SetRangeUser(0, hist_dist_peak->GetMaximum());
   TLatex* tex = new TLatex(0.6,0.8,"1.5 nb^{-1} (PbPb) 5.02 TeV");
   tex->SetNDC(kTRUE);
   tex->SetLineWidth(2);
