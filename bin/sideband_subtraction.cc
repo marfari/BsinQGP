@@ -82,6 +82,8 @@ names.push_back(TString(histos_data[i]->GetName()));
 	      rp->SetH1DrawOpt("E");
 	      c.SetTicks(0, 1);
               rp->Draw("nogrid");
+	      rp->GetLowerRefYaxis()->SetTitle("ratio");
+	      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
 	
 	  TLegend* leg;
 
@@ -229,7 +231,6 @@ RooExponential fit_side("fit_side", "fit_side_exp", Bmass, lambda);
   tex13->SetTextSize(0.04);
   //tex13->Draw();
 
-
    d.SaveAs("mc_validation_plots/fit_side.pdf");
 
   std::cout << std::endl << "chisquare: " << massframe->chiSquare() << std::endl;
@@ -296,20 +297,20 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   TH1D* dist_side = (TH1D*)reduced->createHistogram("dist_side",var, Binning(n, var.getMin(), var.getMax()));
   dist_side->SetMarkerColor(kBlue);
   dist_side->SetLineColor(kBlue);
-  dist_side->SetNameTitle("dist_side", "Signal and Background Distributions");
+  dist_side->SetNameTitle("dist_side", "");
 
   TH1D* hist_dist_peak = (TH1D*)central->createHistogram(var.GetName(), var, Binning(n, var.getMin(), var.getMax()));
   TH1D* dist_peak = new TH1D(*hist_dist_peak);
   dist_peak->SetMarkerColor(kRed);
   dist_peak->SetLineColor(kRed);
-  dist_peak->SetNameTitle(var.GetName(), "Signal and Background Distributions");
+  dist_peak->SetNameTitle(var.GetName(), "");
 
   //if(mc==1) histos.push_back(pt_dist_peak);
 
   //TH1D* dist_total = (TH1D*) total->createHistogram("dist_total",var, Binning(n, var.getMin(), var.getMax()));
   hist_dist_peak->SetMarkerColor(kBlack);
   hist_dist_peak->SetLineColor(kBlack);
-  hist_dist_peak->SetNameTitle("dist_total", "Signal and Background Distributions");
+  hist_dist_peak->SetNameTitle("dist_total", "");
 
   dist_peak->Add(dist_side, -factor);
   //dist_side->Add(dist_side, factor);
