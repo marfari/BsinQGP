@@ -29,6 +29,9 @@
 #include "TRatioPlot.h"
 
 using namespace RooFit;
+using namespace std;
+//using namespace RooStats;
+
 void set_up_workspace_variables(RooWorkspace& w);
 TH1D* create_histogram(RooRealVar var, TTree* t, int n);
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n);
@@ -78,11 +81,11 @@ names.push_back(TString(histos_data[i]->GetName()));
 	      histos_mc[i]->Sumw2();
 	      histos_mc[i]->Draw();
 	      histos_data[i]->Draw("same");
-	      auto rp = new TRatioPlot(histos_mc[i], histos_data[i], "divsym");
+	      auto rp = new TRatioPlot(histos_data[i], histos_mc[i], "divsym");
 	      rp->SetH1DrawOpt("E");
 	      c.SetTicks(0, 1);
               rp->Draw("nogrid");
-	      rp->GetLowerRefYaxis()->SetTitle("ratio");
+	      rp->GetLowerRefYaxis()->SetTitle("Data/MC");
 	      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
 	
 	  TLegend* leg;
@@ -119,6 +122,71 @@ names.push_back(TString(histos_data[i]->GetName()));
 	}
 
 
+}
+
+void DoSPlot(RooWorkspace& ws)
+{
+  
+}
+
+void build_pdf(RooWorkspace& w)
+{
+  double mass_peak;
+
+  RooRealVar Bmass = *(w.var("Bmass"));
+  RooRealVar Bpt = *(w.var("Bpt"));
+  RooAbsData* data = w.data("data");
+
+  mass_peak = 5.27926;
+
+  double n_signal_initial = data->sumEntries(TString::Format("abs(Bmass-%g)<0.015",mass_peak)) - data->sumEntries(TString::Format("abs(Bmass-%g)<0.030&&abs(Bmass-%g)>0.015",mass_peak,mass_peak));
+  if(n_signal_initial<0) n_signal_initial = 1;
+
+  double n_combinatorial_initial = data->sumEntries() - n_signal_initial;
+  
+  RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
+  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
+  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
+  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
+  RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",Bmass,m_mean,m_sigma1);
+  RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",Bmass,m_mean,m_sigma2);
+
+  //Soma das Gaussianas
+  RooAddPdf* pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
+
+  RooAddPdf* pdf_m_combinatorial;
+
+  if(n_signal_initial < 500)
+    {
+      m_sigma2.setConstant(kTRUE);
+      m_fraction.setVal(1.);
+      m_fraction.setConstant(kTRUE);
+      cout<<"The initial signal was indeed < 500"<<endl;
+    }
+
+  //Exponencial 1
+  RooRealVar m_exp("m_exp","m_exp",-0.3,-4.,0.);
+  RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",Bmass,m_exp);
+
+  //Exponencial 2
+  RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
+  RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",Bmass,m_exp2);
+
+  //Soma das exponenciais
+  RooRealVar m_fraction_exp("m_fraction_exp","m_fraction_exp", 0.5);
+  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
+
+  m_exp2.setConstant(kTRUE);
+  m_fraction_exp.setVal(1.);
+
+  RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries());
+  RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
+
+  //Cria a pdf para fittar todo o gráfico
+  RooAddPdf* model;
+  model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial), RooArgList(n_signal, n_combinatorial));
+
+  w.import(*model);
 }
 
 std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n){
@@ -329,7 +397,7 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   dist_side->SetXTitle(var.GetName());
   hist_dist_peak->SetXTitle(var.GetName());
   //pt_dist_total->GetYaxis()->SetRangeUser(-1500.,70000.);
-  hist_dist_peak->GetYaxis()->SetRangeUser(0, hist_dist_peak->GetMaximum());
+  hist_dist_peak->GetYaxis()->SetRangeUser(0, 1.3*hist_dist_peak->GetMaximum());
   TLatex* tex = new TLatex(0.6,0.8,"1.5 nb^{-1} (PbPb) 5.02 TeV");
   tex->SetNDC(kTRUE);
   tex->SetLineWidth(2);
