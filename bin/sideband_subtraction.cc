@@ -191,10 +191,10 @@ RooDataSet* reduceddata_central;
 
  double left = 5.15;
  double right = 5.4;
- //double mass_peak = 5.26;
+ double mass_peak = 5.26;
 
 
-//reduceddata_aux = (RooDataSet*) data->reduce(Form("Bmass<%lf", left));
+ //reduceddata_aux = (RooDataSet*) data->reduce(Form("Bmass<%lf", left));
 reduceddata_side = (RooDataSet*) data->reduce(Form("Bmass>%lf",right));
 
 //reduceddata_side->append(*reduceddata_aux);
@@ -204,57 +204,83 @@ reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf"
 
 //SINAL//
 
-// RooRealVar mean("mean","mean",mass_peak,5.15,5.4);
+RooRealVar mean("mean","mean",mass_peak,5.15,5.4);
  
-//RooRealVar sigma("sigma","sigma",0.02);
+RooRealVar sigma("sigma","sigma",0.02);
 
-// RooGaussian signal("signal","signal_gauss",Bmass,mean,sigma);
+RooGaussian signal("signal","signal_gauss",Bmass,mean,sigma);
 
 
 
  //BACKGROUND//
+
+//ERROR FUNCTION//
+ RooRealVar m_nonprompt_scale("m_nonprompt_scale", "m_nonprompt_scale", 4.74168e-02, 0, 1);
+ //1.93204e-02, 0.001, 0.3);
+ RooRealVar m_nonprompt_shift("m_nonprompt_shift", "m_nonprompt_shift", 5.14425, 4.5, 6.);
+//5.14357e+00,5.12,5.16);
+  
+ m_nonprompt_shift.setConstant(kTRUE);
+ m_nonprompt_scale.setConstant(kTRUE);
+
+ RooGenericPdf erf("erf","erf","TMath::Erfc((Bmass-m_nonprompt_shift)/m_nonprompt_scale)", RooArgList(Bmass,m_nonprompt_scale,m_nonprompt_shift));
+
+//EXPONENCIAL
  RooRealVar lambda("lambda","lambda",-2.,-5.,0.0);
  RooExponential fit_side("fit_side", "fit_side_exp", Bmass, lambda);
 
-  Bmass.setRange("all", Bmass.getMin(),Bmass.getMax());
-  Bmass.setRange("right",right,Bmass.getMax());
-  Bmass.setRange("left",Bmass.getMin(),left);
-  Bmass.setRange("peak",left,right);
+ Bmass.setRange("all", Bmass.getMin(),Bmass.getMax());
+ Bmass.setRange("right",right,Bmass.getMax());
+ Bmass.setRange("left",Bmass.getMin(),left);
+ Bmass.setRange("peak",left,right);
 
-  std::cout<<"mass minimum: "<<Bmass.getMin()<<std::endl;
-  std::cout<<"mass maximum: "<<Bmass.getMax()<<std::endl;
+ std::cout<<"mass minimum: "<<Bmass.getMin()<<std::endl;
+ std::cout<<"mass maximum: "<<Bmass.getMax()<<std::endl;
 
 
 
 
   //JUNTANDO OS DOIS--BACKGROUND E SINAL//
 
-  // RooRealVar cof("cof", "cof", 0.5, 0., 1.);
+  RooRealVar cof1("cof", "cof", 0.5, 0., 1.);
+  // RooRealVar cof2("cof", "cof", 0.5, 0., 1.);
 
-  // RooAddPdf model("model", "model", RooArgList(signal,fit_side),cof);
+
+  RooAddPdf model("model", "model", RooArgList(signal,fit_side),cof1);
 
 
  // Bmass.setRange("all", Bmass.getMin(),Bmass.getMax());
 
 
   fit_side.fitTo(*reduceddata_side,Range("right"));
-  //background só à direita
+  //fit do background (sideband right)
 
-  // model.fitTo(*data,Range("all"));
+
+  model.fitTo(*data,Range(5.15,6.));
  //os dois juntos em todo o gráfico
 
  
   RooPlot* massframe = Bmass.frame(Title("Bmass Fit"));
     //o gráfico é feito em função da massa
-//  reduceddata_side->plotOn(massframe);
+
+  //reduceddata_side->plotOn(massframe); -->já estava comentado no código original
+			 
+
   data->plotOn(massframe, RooFit::Name("data"));
   //os dados que vão permanecer a preto
-  //  signal.plotOn(massframe,RooFit::Name("signal"),Range(5.15,5.4),LineColor(kOrange),LineStyle(kDashed));
+
+  // signal.plotOn(massframe,RooFit::Name("signal"),Range(5.15,5.4),LineColor(kOrange),LineStyle(kDashed));
  //o sinal que vai ficar a laranja e ser uma linha a tracejado 
-    fit_side.plotOn(massframe, RooFit::Name("fit_side"),Range("all"),LineColor(kBlue),LineStyle(kDashed));
+
+ fit_side.plotOn(massframe, RooFit::Name("fit_side"),Range("all"),LineColor(kBlue),LineStyle(kDashed));
   //o background que vai ficar a azul e tracejado
-  //  model.plotOn(massframe, RooFit::Name("model"),Range("all"),LineColor(kRed),LineStyle(kDashed));
+
+ erf.plotOn(massframe, RooFit::Name("erf"),Range("all"),LineColor(kGreen),LineStyle(kDashed));
+
+
+ model.plotOn(massframe, RooFit::Name("model"),Range("all"),LineColor(kRed),LineStyle(kDashed));
  //o modelo vai ser uma linha encarnada
+
   massframe->GetYaxis()->SetTitleOffset(1.3);
   massframe->SetXTitle("Bmass (GeV)");
 //  massframe->SetNameTitle("sideband_fit", "Exponential Fit - Sideband Subtraction");
@@ -295,15 +321,18 @@ reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf"
   //LEGENDA//
 
  
-  TLegend *leg = new TLegend (0.7, 0.5, 0.85, 0.65);
+  TLegend *leg = new TLegend (0.4, 0.6, 0.89, 0.89);
+  //(0.7, 0.5, 0.85, 0.65
+  //(0.1,0.7,0.48,0.9)
+  //(0.4,0.6,0.89,0.89
   leg->AddEntry(massframe->findObject("data"), "Data", "l");
-  leg->AddEntry(massframe->findObject("signal"), "Signal", "l");
+  // leg->AddEntry(massframe->findObject("signal"), "Signal", "l");
   leg->AddEntry(massframe->findObject("fit_side"), "Background fit", "l");
-  leg->AddEntry(massframe->findObject("model"),"Global Fit","l");
+  // leg->AddEntry(massframe->findObject("model"),"Global Fit","l");
   leg->Draw("same");
  
 
-   d.SaveAs("mc_validation_plots/fit_side.pdf");
+  d.SaveAs("mc_validation_plots/fit_side.pdf"); //não está a salvar
 
   std::cout << std::endl << "chisquare: " << massframe->chiSquare() << std::endl;
   //  std::cout << "LogLikelihood: " << nll->getVal() << std::endl;
