@@ -1,5 +1,3 @@
-
-
 #include <sstream>
 #include <vector>
 #include <TStyle.h>
@@ -30,259 +28,283 @@
 #include <RooGenericPdf.h>
 #include "TRatioPlot.h"
 
+#include "RooRealVar.h"
+#include "RooStats/SPlot.h"
+#include "RooDataSet.h"
+#include "RooRealVar.h"
+#include "RooGaussian.h"
+#include "RooExponential.h"
+#include "RooChebychev.h"
+#include "RooAddPdf.h"
+#include "RooProdPdf.h"
+#include "RooAddition.h"
+#include "RooProduct.h"
+#include "TCanvas.h"
+#include "RooAbsPdf.h"
+#include "RooFit.h"
+#include "RooFitResult.h"
+#include "RooWorkspace.h"
+#include "RooConstVar.h"
+#include "TFile.h"
+#include "TNtupleD.h"
+#include "TH1D.h"
+#include "TLegend.h"
 
+using namespace RooStats;
 using namespace RooFit;
 using namespace std;
-//using namespace RooStats;
 
+void DoSPlot(RooWorkspace&, RooAddPdf*);
+void MakePlots(RooWorkspace&, int, TString);
+void read_data(RooWorkspace&, TString, TString);
 void set_up_workspace_variables(RooWorkspace& w);
 TH1D* create_histogram(RooRealVar var, TTree* t, int n);
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n);
-std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n);
-
+std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, TString input_file_data, int* n);
 
 int main(){
 
   TString input_file_data = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
   TString input_file_mc = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_mc_ntKp_PbPb_2018_pthatweight.root";
 
-std::vector<TH1D*> histos_data;
-//vetor por enquanto vazio que vai ter os histogramas dos dados
-std::vector<TH1D*> histos_mc;
-//vetor por enquanto vazio que vai ter os histogramas de MC
-int n_bins[]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10, 10, 10};
-//como é que foram escolhidos os bins?
+  std::vector<TH1D*> histos_data;
+  std::vector<TH1D*> histos_mc;
+  int n_bins[]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+  TString variables[]={"Bpt","By","Btrk1D0Err","Bmu1pt","Bmu1eta","Btrk1pt","Btrk1eta","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1D0","Btrk1Dz","Bd0","Blxy","Bd0err"};
 
-RooWorkspace* ws = new RooWorkspace("ws","Bmass");
-//The RooWorkspace is a persistable container for RooFit projects.A workspace can contain and own variables, p.d.f.s, functions and datasets. All objects that live in the workspace are owned by the workspace.
+  RooWorkspace* ws = new RooWorkspace("ws","Bmass");
 
-set_up_workspace_variables(*ws);
-//vou guardar variáveis no workspace (ver abaixo junto à definição de sideband_subtraction)
+  set_up_workspace_variables(*ws);
 
-//HISTOGRAMA DOS DADOS
-histos_data = sideband_subtraction(ws, input_file_data, n_bins);
-//usar sideband_subtraction para obter o histograma dos dados(ver abaixo como esta está definida junto às variáveis no workspace)
-//PARA O HISTROGAMA MC
-TFile *fin_mc = new TFile(input_file_mc);
-//lê o ficheiro root
-TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
-//a partir do ficheiro devolve o histograma
+  histos_data = sideband_subtraction(ws, input_file_data, n_bins);
 
-std::vector<TString> names;
-//crio o vetor que vai conter os nomes
+  TFile *fin_mc = new TFile(input_file_mc);
+  TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
 
-//percorro o vetor dos dados e dou os nomes às variáveis
-for(int i=0; i<(int)histos_data.size(); i++){
-std::cout<< "Var names: "<< histos_data[i]->GetName()<<std::endl;
-}
-//percorrro o vetor dos dados e adiciono ao vetor de monte carlo os nomes das variáveis(.push_back=preencho o vetor)
-for(int i=0; i<(int)histos_data.size(); i++){histos_mc.push_back(create_histogram((*ws->var(histos_data[i]->GetName())), t1_mc, n_bins[i]));
-names.push_back(TString(histos_data[i]->GetName()));
+  std::vector<TString> names;
 
-//com isto fui buscar as variáveis às trees e coloquei-as no roofit
+  for(int i=0; i<(int)histos_data.size(); i++){
+    std::cout<< "Var names: "<< histos_data[i]->GetName()<<std::endl;
+  }
+  for(int i=0; i<(int)histos_data.size(); i++){histos_mc.push_back(create_histogram((*ws->var(histos_data[i]->GetName())), t1_mc, n_bins[i]));
+    names.push_back(TString(histos_data[i]->GetName()));
 
- } 
+  } 
 
 
-      for(int i=0; i<(int)histos_data.size(); i++)
-	{
-	  TCanvas c;
-	      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
-              histos_mc[i]->SetStats(0);
-              histos_data[i]->SetStats(0);
-	      histos_mc[i]->Scale(1/histos_mc[i]->Integral());
-	      // histos_mc[i]->GetYaxis()->SetRangeUser(-0.1,2*histos_mc[i]->GetMaximum());
-	      // histos_mc[i]->GetYaxis()->SetRangeUser(histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-	      // histos_mc[i]->GetYaxis()->SetRangeUser(-0.1,0.5*histos_data[i]->GetMaximum());
-	      histos_data[i]->Scale(1/histos_data[i]->Integral());
-	      // histos_mc[i]->GetYaxis()->SetRangeUser(histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-	      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-	      histos_mc[i]->Draw();
-	      histos_data[i]->Draw("same");
-	      auto rp = new TRatioPlot(histos_data[i], histos_mc[i], "divsym");
-	      //Fazendo o Tratio para ter o racio entre os dados e mc
-        c.SetTicks(0, 1);
-	      rp->SetH1DrawOpt("E");
-        rp->Draw("nogrid");
-	      rp->GetLowerRefYaxis()->SetTitle("Data/MC");
-	      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
-        c.Update();
-	
-	  TLegend* leg;
-
-	  leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-
-	  leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
-	  leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
-	  leg->SetTextSize(0.03);
-	  //  std::cout<<"NOME DO DATA: "<< histos_data[i]->GetName()<< std::endl;
-	  // std::cout<<"NOME DO MC: "<< histos_mc[i]->GetName()<< std::endl;
-	  leg->Draw("same");
-	  //"DESENHOU"
-
-    /*TLatex* tex = new TLatex(0.6,0.8,"1.5 nb^{-1} (PbPb) 5.02 TeV");
-    tex->SetNDC(kTRUE);
-    tex->SetLineWidth(2);
-    tex->SetTextSize(0.04);
-    tex->Draw();
-    tex = new TLatex(0.68,0.85,"CMS Preliminary");
-    tex->SetNDC(kTRUE);
-    tex->SetTextFont(42);
-    tex->SetTextSize(0.04);
-    tex->SetLineWidth(2);
-    tex->Draw();*/
-
-
-	  //SALVA
-    c.SaveAs("mc_validation_plots/"+names[i]+"_mc_validation.pdf");
-    leg->Delete();
-    //tex->Delete();
-    histos_mc[i]->Delete();
-    histos_data[i]->Delete();
-
-	}//AQUI TERMINA O CICLO FOR
-
-}
-
-void DoSPlot(RooWorkspace& ws)
-{
-  
-}
-
-void build_pdf(RooWorkspace& w)
-{
-  double mass_peak;
-
-  RooRealVar Bmass = *(w.var("Bmass"));
-  RooRealVar Bpt = *(w.var("Bpt"));
-  RooAbsData* data = w.data("data");
-
-  mass_peak = 5.27926;
-
-  double n_signal_initial = data->sumEntries(TString::Format("abs(Bmass-%g)<0.015",mass_peak)) - data->sumEntries(TString::Format("abs(Bmass-%g)<0.030&&abs(Bmass-%g)>0.015",mass_peak,mass_peak));
-  if(n_signal_initial<0) n_signal_initial = 1;
-
-  double n_combinatorial_initial = data->sumEntries() - n_signal_initial;
-  
-  RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_peak-0.09,mass_peak+0.09);
-  RooRealVar m_sigma1("m_sigma1","m_sigma1",0.010,0.009,0.200);
-  RooRealVar m_sigma2("m_sigma2","m_sigma2",0.005,0.004,0.100);
-  RooRealVar m_fraction("m_fraction","m_fraction", 0.5, 0, 1);
-  RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",Bmass,m_mean,m_sigma1);
-  RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",Bmass,m_mean,m_sigma2);
-
-  //Soma das Gaussianas
-  RooAddPdf* pdf_m_signal = new RooAddPdf("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
-
-  RooAddPdf* pdf_m_combinatorial;
-
-  if(n_signal_initial < 500)
+  for(int i=0; i<(int)histos_data.size(); i++)
     {
-      m_sigma2.setConstant(kTRUE);
-      m_fraction.setVal(1.);
-      m_fraction.setConstant(kTRUE);
-      cout<<"The initial signal was indeed < 500"<<endl;
+      TCanvas c;
+      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      histos_mc[i]->SetStats(0);
+      histos_data[i]->SetStats(0);
+      histos_mc[i]->Scale(1/histos_mc[i]->Integral());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(-0.1,2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(-0.1,0.5*histos_data[i]->GetMaximum());
+      histos_data[i]->Scale(1/histos_data[i]->Integral());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->Draw();
+      histos_data[i]->Draw("same");
+      auto rp = new TRatioPlot(histos_data[i], histos_mc[i], "divsym");
+      c.SetTicks(0, 1);
+      rp->SetH1DrawOpt("E");
+      rp->Draw("nogrid");
+      rp->GetLowerRefYaxis()->SetTitle("Data/MC");
+      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
+      c.Update();
+	
+      TLegend* leg;
+
+      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+
+      leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
+      leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
+      leg->SetTextSize(0.03);
+      //  std::cout<<"NOME DO DATA: "<< histos_data[i]->GetName()<< std::endl;
+      // std::cout<<"NOME DO MC: "<< histos_mc[i]->GetName()<< std::endl;
+      leg->Draw("same");
+
+      /*TLatex* tex = new TLatex(0.6,0.8,"1.5 nb^{-1} (PbPb) 5.02 TeV");
+	tex->SetNDC(kTRUE);
+	tex->SetLineWidth(2);
+	tex->SetTextSize(0.04);
+	tex->Draw();
+	tex = new TLatex(0.68,0.85,"CMS Preliminary");
+	tex->SetNDC(kTRUE);
+	tex->SetTextFont(42);
+	tex->SetTextSize(0.04);
+	tex->SetLineWidth(2);
+	tex->Draw();*/
+
+      c.SaveAs("mc_validation_plots/"+names[i]+"_mc_validation.pdf");
+      leg->Delete();
+      //tex->Delete();
+      histos_mc[i]->Delete();
+      histos_data[i]->Delete();
+
     }
 
-  //Exponencial 1
-  RooRealVar m_exp("m_exp","m_exp",-0.3,-4.,0.);
-  RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",Bmass,m_exp);
 
-  //Exponencial 2
-  RooRealVar m_exp2("m_exp2","m_exp2",-0.3,-4.,0.);
-  RooExponential pdf_m_combinatorial_exp2("pdf_m_combinatorial_exp2","pdf_m_combinatorial_exp2",Bmass,m_exp2);
 
-  //Soma das exponenciais
-  RooRealVar m_fraction_exp("m_fraction_exp","m_fraction_exp", 0.5);
-  pdf_m_combinatorial=new RooAddPdf("pdf_m_combinatorial","pdf_m_combinatorial",RooArgList(pdf_m_combinatorial_exp,pdf_m_combinatorial_exp2),RooArgList(m_fraction_exp));
 
-  m_exp2.setConstant(kTRUE);
-  m_fraction_exp.setVal(1.);
-
-  RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries());
-  RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
-
-  //Cria a pdf para fittar todo o gráfico
-  RooAddPdf* model;
-  model = new RooAddPdf("model","model", RooArgList(*pdf_m_signal, *pdf_m_combinatorial), RooArgList(n_signal, n_combinatorial));
-
-  w.import(*model);
+  //SPlot
+  for(int i = 0;i<16;i++)   {
+    read_data(*ws, input_file_data, variables[i]);
+    DoSPlot(*ws, model);   
+    MakePlots(*ws,n_bins[i],variables[i]);
+  }    
 }
 
-std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n){
-   
+void read_data(RooWorkspace& w, TString filename, TString var_label)
+{
+  TFile* f = new TFile(filename);
+  TNtupleD* _nt = (TNtupleD*)f->Get("ntKp");
+
+  RooArgList arg_list ("arg_list");
+  arg_list.add(*(w.var("Bmass")));
+  arg_list.add(*(w.var(var_label)));
+
+  RooDataSet* data = new RooDataSet("data","data",_nt,arg_list);
+
+  w.import(*data, Rename("data"));
+
+}
+
+void DoSPlot(RooWorkspace& ws, RooAddPdf* model){
+
+  RooDataSet* data = (RooDataSet*)ws.data("data");
+
+  RooRealVar* BpYield = ws.var("n_signal");
+  RooRealVar* BgYield = ws.var("n_combinatorial");
+
+  model->fitTo(*data, Extended());
+
+  RooRealVar* mean  = ws.var("m_mean");
+  RooRealVar* sigma = ws.var("m_sigma1");
+  RooRealVar* dec   = ws.var("m_exp");
+
+  mean ->setConstant();
+  sigma->setConstant();
+  dec  ->setConstant();
+
+  RooMsgService::instance().setSilentMode(true);
+
+  //add sWeights to dataset based on model and yield variables
+  //sPlot class adds a new variable that has the name of the corresponding yield + "_sw".
+  SPlot* sData = new SPlot("sData","An sPlot",*data, model, RooArgList(*BpYield,*BgYield));
+
+  cout << endl <<  "Yield of B+ is "
+       << BpYield->getVal() << ".  From sWeights it is "
+       << sData->GetYieldFromSWeight("n_signal") << endl;
+
+  cout << "Yield of background is "
+       << BgYield->getVal() << ".  From sWeights it is "
+       << sData->GetYieldFromSWeight("n_combinatorial") << endl
+       << endl;
+
+  for(Int_t i=0; i < 10; i++) {
+    if(0)
+      cout << "y Weight   "     << sData->GetSWeight(i,"BpYield")
+	   << "\tb Weight   "     << sData->GetSWeight(i,"BgYield")
+	   << "\ttotal Weight   " << sData->GetSumOfEventSWeight(i)
+	   << endl;
+  }
+
+  cout << endl;
+
+  ws.import(*data, Rename("dataWithSWeights"));
+
+}
+
+void MakePlots(RooWorkspace& ws, int nob, TString label){
+
+  //MUDAR ISTO PARA USARMOS O NOSSO PRÓPRIO MODELO
+  RooAbsPdf* model = ws.pdf("model");
+  RooAbsPdf* BpModel = ws.pdf("pdf_m_signal");
+  RooAbsPdf* BgModel = ws.pdf("pdf_m_combinatorial");
+
+  RooRealVar* Bmass  = ws.var("Bmass");
+  RooRealVar* variable = ws.var(label);
+  RooRealVar* BpYield = ws.var("n_signal");
+  RooRealVar* BgYield = ws.var("n_combinatorial");
+
+  double sigYield = BpYield->getVal();
+  double bkgYield = BgYield->getVal();
+
+  RooDataSet* data = (RooDataSet*)ws.data("data");
+
+  RooPlot* massframe = Bmass->frame();
+
+  TCanvas c;
+  data->plotOn(massframe);
+  model->plotOn(massframe);
+  massframe->SetTitle("Bmass");
+  massframe->Draw();
+  c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/fit_side_splot.pdf");
   
-TFile* fin_data = new TFile(f_input);
-//tal como há bocado lê o ficheiro root 
-TTree* t1_data = (TTree*)fin_data->Get("ntKp");
-//a partir do ficheiro devolve o histograma
-
-RooRealVar Bmass = *(w->var("Bmass"));
-RooRealVar Bpt = *(w->var("Bpt"));
-RooRealVar By = *(w->var("By"));
-RooRealVar Btrk1D0Err = *(w->var("Btrk1D0Err"));
-RooRealVar Bmu1pt = *(w->var("Bmu1pt"));
-RooRealVar Bmu1eta = *(w->var("Bmu1eta"));
-RooRealVar Btrk1pt = *(w->var("Btrk1pt"));
-RooRealVar Btrk1eta = *(w->var("Btrk1eta"));
-RooRealVar Bchi2cl = *(w->var("Bchi2cl"));
-RooRealVar BsvpvDistance = *(w->var("BsvpvDistance"));
-RooRealVar BsvpvDistance_Err = *(w->var("BsvpvDistance_Err"));
-RooRealVar Balpha = *(w->var("Balpha"));
-RooRealVar Btrk1D0 = *(w->var("Btrk1D0"));
-RooRealVar Btrk1Dz = *(w->var("Btrk1Dz"));
-RooRealVar Bd0 = *(w->var("Bd0"));
-RooRealVar Bd0err = *(w->var("Bd0err"));
-RooRealVar Blxy = *(w->var("Blxy"));
+}
 
 
-RooArgSet arg_list(Bmass,Bpt,By, Btrk1D0Err, Bmu1pt, Bmu1eta, Btrk1pt, Btrk1eta);
-arg_list.add(Bchi2cl);
-arg_list.add(BsvpvDistance);
-arg_list.add(Balpha);
-arg_list.add(Btrk1D0);
-arg_list.add(Btrk1Dz);
-arg_list.add(Bd0);
-arg_list.add(Blxy);
-arg_list.add(Bd0err);
-arg_list.add(BsvpvDistance_Err);
-RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
+std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, TString f_input, int* n){
+
+  TFile* fin_data = new TFile(f_input);
+  TTree* t1_data = (TTree*)fin_data->Get("ntKp");
+
+  RooRealVar Bmass = *(w->var("Bmass"));
+  RooRealVar Bpt = *(w->var("Bpt"));
+  RooRealVar By = *(w->var("By"));
+  RooRealVar Btrk1D0Err = *(w->var("Btrk1D0Err"));
+  RooRealVar Bmu1pt = *(w->var("Bmu1pt"));
+  RooRealVar Bmu1eta = *(w->var("Bmu1eta"));
+  RooRealVar Btrk1pt = *(w->var("Btrk1pt"));
+  RooRealVar Btrk1eta = *(w->var("Btrk1eta"));
+  RooRealVar Bchi2cl = *(w->var("Bchi2cl"));
+  RooRealVar BsvpvDistance = *(w->var("BsvpvDistance"));
+  RooRealVar BsvpvDistance_Err = *(w->var("BsvpvDistance_Err"));
+  RooRealVar Balpha = *(w->var("Balpha"));
+  RooRealVar Btrk1D0 = *(w->var("Btrk1D0"));
+  RooRealVar Btrk1Dz = *(w->var("Btrk1Dz"));
+  RooRealVar Bd0 = *(w->var("Bd0"));
+  RooRealVar Bd0err = *(w->var("Bd0err"));
+  RooRealVar Blxy = *(w->var("Blxy"));
+
+  RooArgSet arg_list(Bmass,Bpt,By, Btrk1D0Err, Bmu1pt, Bmu1eta, Btrk1pt, Btrk1eta);
+  arg_list.add(Bchi2cl);
+  arg_list.add(BsvpvDistance);
+  arg_list.add(Balpha);
+  arg_list.add(Btrk1D0);
+  arg_list.add(Btrk1Dz);
+  arg_list.add(Bd0);
+  arg_list.add(Blxy);
+  arg_list.add(Bd0err);
+  arg_list.add(BsvpvDistance_Err);
+  RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
+
+  RooDataSet* reduceddata_side;
+  //RooDataSet* reduceddata_aux;
+  RooDataSet* reduceddata_central;
+
+  double left = 5.15;
+  double right = 5.4;
+  double mass_peak = 5.26;
+
+  //reduceddata_aux = (RooDataSet*) data->reduce(Form("Bmass<%lf", left));
+  reduceddata_side = (RooDataSet*) data->reduce(Form("Bmass>%lf",right));
+
+  //reduceddata_side->append(*reduceddata_aux);
+
+  reduceddata_central = (RooDataSet*) data->reduce(Form("Bmass>%lf",left));
+  reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf",right));
 
 
-RooDataSet* reduceddata_side;
-//RooDataSet* reduceddata_aux;
-RooDataSet* reduceddata_central;
+  RooRealVar mean("mean","mean",mass_peak,5.15,5.4); 
+  RooRealVar sigma("sigma","sigma",0.02);
+  RooGaussian signal("signal","signal_gauss",Bmass,mean,sigma);
 
- double left = 5.15;
- double right = 5.4;
- double mass_peak = 5.26;
-
-
- //reduceddata_aux = (RooDataSet*) data->reduce(Form("Bmass<%lf", left));
-reduceddata_side = (RooDataSet*) data->reduce(Form("Bmass>%lf",right));
-
-//reduceddata_side->append(*reduceddata_aux);
-
-reduceddata_central = (RooDataSet*) data->reduce(Form("Bmass>%lf",left));
-reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf",right));
-
-//SINAL//
-
-RooRealVar mean("mean","mean",mass_peak,5.15,5.4);
- 
-RooRealVar sigma("sigma","sigma",0.02);
-
-RooGaussian signal("signal","signal_gauss",Bmass,mean,sigma);
-
-
-
- //BACKGROUND//
-
-//ERROR FUNCTION//
  RooRealVar m_nonprompt_scale("m_nonprompt_scale", "m_nonprompt_scale", 4.74168e-02, 0, 1);
- //1.93204e-02, 0.001, 0.3);
  RooRealVar m_nonprompt_shift("m_nonprompt_shift", "m_nonprompt_shift", 5.14425, 4.5, 6.);
-//5.14357e+00,5.12,5.16);
   
  m_nonprompt_shift.setConstant(kTRUE);
  m_nonprompt_scale.setConstant(kTRUE);
@@ -300,8 +322,6 @@ RooGaussian signal("signal","signal_gauss",Bmass,mean,sigma);
 
  std::cout<<"mass minimum: "<<Bmass.getMin()<<std::endl;
  std::cout<<"mass maximum: "<<Bmass.getMax()<<std::endl;
-
-
 
 
   //JUNTANDO OS DOIS--BACKGROUND E SINAL//

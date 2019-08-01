@@ -29,7 +29,6 @@ without sideband-like subtraction the roostats splot implementaiton is utilized
 #include "TH1D.h"
 #include "TLegend.h"
 
-
 using namespace RooFit;
 using namespace RooStats;
 using namespace std;
@@ -41,38 +40,26 @@ void read_data(RooWorkspace&,TString,TString,int);
 TString channel_to_ntuple_name(int);
 void set_up_workspace_variables(RooWorkspace&);
 
-
 void splot_Bp_allVariables() {
 
-const int n_var = 16;
-int channel = 1; // B+
-int n_bins[n_var]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10};
-TString variables [n_var] = {"Bpt","By","Btrk1D0Err","Bmu1pt","Bmu1eta","Btrk1pt","Btrk1eta","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1D0","Btrk1Dz","Bd0","Blxy","Bd0err"};
-TString input_file_Bp = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
+  const int n_var = 16;
+  int channel = 1; // B+
+  int n_bins[n_var]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10};
+  TString variables [n_var] = {"Bpt","By","Btrk1D0Err","Bmu1pt","Bmu1eta","Btrk1pt","Btrk1eta","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1D0","Btrk1Dz","Bd0","Blxy","Bd0err"};
+  TString input_file_Bp = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
 
-    for(int i = 0;i<n_var;i++)   { // loop over all the variables
+  for(int i = 0;i<n_var;i++)   {
+    RooWorkspace* ws = new RooWorkspace("WS");
+    set_up_workspace_variables(*ws);
+    read_data(*ws, input_file_Bp, variables[i], channel);
 
-      cout<<"Considering "<<variables[i]<<" variable...\n";
-  RooWorkspace* ws = new RooWorkspace("WS");
-  set_up_workspace_variables(*ws);
-  read_data(*ws, input_file_Bp, variables[i], channel);
-
-
-  cout<<"\nWorkSpace CONTENTS\n";
-  ws->Print();   // print workspace contents
-  DoSPlot(*ws,channel);   // fit data with 1D model, add sWeights
-  MakePlots(*ws,n_bins[i],variables[i]); // project data for signal and background
-  delete ws;     // cleanup
+    DoSPlot(*ws,channel);   
+    MakePlots(*ws,n_bins[i],variables[i]);
+    delete ws;   
   }
-
-  cout<<"\n...loop over variables done.\n";
 }
 
-
-//____________________________________
 void DoSPlot(RooWorkspace& ws,int channel){
-
-  cout << "\ndoing sPlot...\n" << endl;
 
   build_pdf(ws,channel);
   RooAbsPdf*  model = ws.pdf("model");
@@ -81,13 +68,11 @@ void DoSPlot(RooWorkspace& ws,int channel){
   RooRealVar* BpYield = ws.var("n_signal");
   RooRealVar* BgYield = ws.var("n_combinatorial");
 
-  cout<<"BpYield = "<<BpYield->getVal()<<endl;
-  cout<<"BgYield = "<<BgYield->getVal()<<endl;
+  //cout<<"BpYield = "<<BpYield->getVal()<<endl;
+  //cout<<"BgYield = "<<BgYield->getVal()<<endl;
 
-  // fit the model to the data
   model->fitTo(*data,Extended());
 
-  // sPlot technique requires model parameters (other than the yields) to be fixed
   RooRealVar* mean  = ws.var("m_mean");
   RooRealVar* sigma = ws.var("m_sigma1");
   RooRealVar* dec   = ws.var("m_exp");
@@ -96,46 +81,35 @@ void DoSPlot(RooWorkspace& ws,int channel){
   sigma->setConstant();
   dec  ->setConstant();
 
-
   RooMsgService::instance().setSilentMode(true);
 
-  // add sWeights to dataset based on model and yield variables
-  // sPlot class adds a new variable that has the name of the corresponding yield + "_sw".
-
+  //add sWeights to dataset based on model and yield variables
+  //sPlot class adds a new variable that has the name of the corresponding yield + "_sw".
   SPlot* sData = new SPlot("sData","An sPlot",*data, model, RooArgList(*BpYield,*BgYield));
 
   cout << endl <<  "Yield of B+ is "
-	    << BpYield->getVal() << ".  From sWeights it is "
-	    << sData->GetYieldFromSWeight("n_signal") << endl;
+       << BpYield->getVal() << ".  From sWeights it is "
+       << sData->GetYieldFromSWeight("n_signal") << endl;
 
   cout << "Yield of background is "
-	    << BgYield->getVal() << ".  From sWeights it is "
-	    << sData->GetYieldFromSWeight("n_combinatorial") << endl
-	    << endl;
+       << BgYield->getVal() << ".  From sWeights it is "
+       << sData->GetYieldFromSWeight("n_combinatorial") << endl
+       << endl;
 
   for(Int_t i=0; i < 10; i++) {
     if(0)
-    cout << "y Weight   "     << sData->GetSWeight(i,"BpYield")
-	      << "\tb Weight   "     << sData->GetSWeight(i,"BgYield")
-	      << "\ttotal Weight   " << sData->GetSumOfEventSWeight(i)
-	      << endl;
+      cout << "y Weight   "     << sData->GetSWeight(i,"BpYield")
+	   << "\tb Weight   "     << sData->GetSWeight(i,"BgYield")
+	   << "\ttotal Weight   " << sData->GetSumOfEventSWeight(i)
+	   << endl;
   }
 
   cout << endl;
 
-  // import this new dataset with sWeights
   ws.import(*data, Rename("dataWithSWeights"));
+}
 
-  cout << "\n...done doSplot.\n" << endl;
-} // "DO SPLOT" ENDS
-
-
-void MakePlots(RooWorkspace& ws, int nob,TString label){
-
-  cout << "\nplotting...\n" << endl;
-
-  // Here we make plots of the discriminating variable (Bmass) after the fit
-  // and of the control variable (angle) after unfolding with sPlot.
+void MakePlots(RooWorkspace& ws, int nob, TString label){
 
   TCanvas* cdata = new TCanvas("sPlot","sPlot", 800, 600);
   cdata->Divide(2,2);
@@ -150,17 +124,13 @@ void MakePlots(RooWorkspace& ws, int nob,TString label){
   RooRealVar* BpYield = ws.var("n_signal");
   RooRealVar* BgYield = ws.var("n_combinatorial");
 
-
   double sigYield = BpYield->getVal();
   double bkgYield = BgYield->getVal();
 
-  cout<<"sigYield = "<<sigYield<<endl;
-  cout<<"bkgYield = "<<bkgYield<<endl;
+  //cout<<"sigYield = "<<sigYield<<endl;
+  //cout<<"bkgYield = "<<bkgYield<<endl;
 
-  RooDataSet* data = (RooDataSet*) ws.data("data");
-
-  //this shouldn't be necessary (set pars to their fit values)
-  //model->fitTo(*data, Extended());
+  RooDataSet* data = (RooDataSet*)ws.data("data");
 
   cdata->cd(1);
   RooPlot* mframe = Bmass->frame();
@@ -175,7 +145,7 @@ void MakePlots(RooWorkspace& ws, int nob,TString label){
   cdata->cd(2);
   RooPlot* ptframe = variable->frame();
   data->plotOn(ptframe);
-  ptframe->SetTitle(label+" of B+: total sample");
+  ptframe->SetTitle(label + " of B+: total sample");
   ptframe->Draw();
 
   //get the dataset with sWeights
@@ -268,9 +238,6 @@ void MakePlots(RooWorkspace& ws, int nob,TString label){
   sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_SigBkg_"+label+".gif");
   sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_SigBkg_"+label+".pdf");
 
-
-  cout << "\n...done plotting.\n" << endl;
-
   //cleanup
   delete cdata;
   delete prov;
@@ -336,6 +303,7 @@ void build_pdf(RooWorkspace& w,int channel) {
  RooRealVar Bpt = *(w.var("Bpt"));
  RooAbsData* data = w.data("data");
 
+ //Escolhe o B que estamos a estudar
 switch (channel) {
  default:
  case 1:
@@ -372,9 +340,7 @@ case 2:
     m_sigma2.setConstant(kTRUE);
     m_fraction.setVal(1.);
     m_fraction.setConstant(kTRUE);
-    std::endl(std::cout);
-    std::cout<<"The initial signal was indeed < 500"<<std::endl;
-    std::endl(std::cout);
+    //cout<<"The initial signal was indeed < 500"<<endl;
 
   }
 
@@ -400,7 +366,7 @@ case 2:
 
    w.import(*model);
 
-} // "BUILD PDF" ENDS
+}
 
 void set_up_workspace_variables(RooWorkspace& w)
 {
@@ -583,4 +549,4 @@ void set_up_workspace_variables(RooWorkspace& w)
     w.import(HiBin);
 
 
-  } //"SET UP WS VARIABLES" ENDS
+  }
