@@ -78,7 +78,6 @@ int main(){
   RooWorkspace* ws = new RooWorkspace("ws");
 
   set_up_workspace_variables(*ws);
-  
   histos_data = sideband_subtraction(ws, input_file_data, n_bins);
 
   TFile *fin_mc = new TFile(input_file_mc);
@@ -129,11 +128,13 @@ int main(){
       histos_data[i]->Delete();
 
     }
-  
+
+  vector<TH1D*> histos_weight;
+
   //SPlot
   for(int i = 0;i<n_var;i++)   {
     read_data(*ws, input_file_data, variables[i]);
-    splot(*ws, variables[i], n_bins[i]);
+    histos_weight = splot(*ws, variables[i], n_bins[i]);
   } 
 }
 
@@ -158,10 +159,14 @@ vector<TH1D*> splot(RooWorkspace& ws, TString variable, int nob)
   RooAbsPdf* model = ws.pdf("model");
 
   RooDataSet* data = (RooDataSet*)ws.data("data");
+  
   RooRealVar* BpYield = ws.var("n_signal");
   RooRealVar* BgYield = ws.var("n_combinatorial");
+
+  cout << "before get val" << endl;
   double sigYield = BpYield->getVal();
   double bkgYield = BgYield->getVal();
+  cout << "after get val" << endl;
 
   cout<< "BpYield (before SPlot) = " <<BpYield->getVal()<<endl;
   cout<< "BgYield (before Splot) = " <<BgYield->getVal()<<endl;
@@ -372,7 +377,6 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
   model.fitTo(*data,Range("all"));
   //TUDO
 
-
   RooPlot* massframe = Bmass.frame(); //removi o título
   //o gráfico é feito em função da massa
 
@@ -538,6 +542,22 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
 }
 
 
+TH1D* create_histogram(RooRealVar var, TTree* t, int n){
+
+  TH1D* h = new TH1D(var.GetName(), var.GetName(), n, var.getMin(), var.getMax());
+
+  TString name_string = TString(var.GetName()) + ">>htemp(" + Form("%d",n) +"," + Form("%lf", var.getMin()) + "," + Form("%lf", var.getMax()) + ")";
+
+  t->Draw(name_string, "Pthatweight");
+
+  h = (TH1D*)gDirectory->Get("htemp")->Clone();
+  h->SetTitle("");
+  h->SetMarkerColor(kBlack);
+  h->SetLineColor(kBlack);
+  return h;
+}
+
+
 //def da função
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n){
 
@@ -604,8 +624,6 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   return dist_peak;
 
 }
-
-
 
 void set_up_workspace_variables(RooWorkspace& w)
 {
