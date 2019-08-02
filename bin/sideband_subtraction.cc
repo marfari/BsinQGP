@@ -28,6 +28,10 @@
 #include "TMath.h"
 #include <RooGenericPdf.h>
 #include "TRatioPlot.h"
+//tens que acrescentar:
+#include <RooBifurGauss.h>
+#include <RooProduct.h>
+#include <RooHist.h>
 
 #include "RooRealVar.h"
 #include "RooStats/SPlot.h"
@@ -55,8 +59,8 @@ using namespace RooStats;
 using namespace RooFit;
 using namespace std;
 
-vector<TH1D*> splot(RooWorkspace&, TString, int);
-//void DoSPlot(RooWorkspace&);
+void DoSPlot(RooWorkspace&);
+vector<TH1D*> GetSPlot(RooWorkspace&, int, TString);
 //void MakePlots(RooWorkspace&, int, TString);
 void read_data(RooWorkspace&, TString, TString);
 void set_up_workspace_variables(RooWorkspace& w);
@@ -90,9 +94,7 @@ int main(){
   }
   for(int i=0; i<(int)histos_data.size(); i++){histos_mc.push_back(create_histogram((*ws->var(histos_data[i]->GetName())), t1_mc, n_bins[i]));
     names.push_back(TString(histos_data[i]->GetName()));
-
   } 
-
 
   for(int i=0; i<(int)histos_data.size(); i++)
     {
@@ -129,13 +131,19 @@ int main(){
 
     }
 
+  //delete ws;
+  
   vector<TH1D*> histos_weight;
 
   //SPlot
   for(int i = 0;i<n_var;i++)   {
+    //RooWorkspace* WS = new RooWorkspace("WS");
+    set_up_workspace_variables(*ws);
     read_data(*ws, input_file_data, variables[i]);
-    histos_weight = splot(*ws, variables[i], n_bins[i]);
-  } 
+    DoSPlot(*ws);
+    histos_weight = GetSPlot(*ws, n_bins[i], variables[i]);
+    //delete WS;
+  }
 }
 
 void read_data(RooWorkspace& w, TString filename, TString variable)
@@ -153,34 +161,48 @@ void read_data(RooWorkspace& w, TString filename, TString variable)
   w.import(*data, Rename("data"));
 }
 
-vector<TH1D*> splot(RooWorkspace& ws, TString variable, int nob)
+void DoSPlot(RooWorkspace& ws)
 {
  
   RooAbsPdf* model = ws.pdf("model");
-
   RooDataSet* data = (RooDataSet*)ws.data("data");
   
   RooRealVar* BpYield = ws.var("n_signal");
   RooRealVar* BgYield = ws.var("n_combinatorial");
 
-  cout << "before get val" << endl;
+  
+
   double sigYield = BpYield->getVal();
   double bkgYield = BgYield->getVal();
-  cout << "after get val" << endl;
 
-  cout<< "BpYield (before SPlot) = " <<BpYield->getVal()<<endl;
-  cout<< "BgYield (before Splot) = " <<BgYield->getVal()<<endl;
+  cout<< "BpYield (before SPlot) = " << sigYield <<endl;
+  cout<< "BgYield (before Splot) = " << bkgYield <<endl;
   
   model->fitTo(*data, Extended() );
 
-  RooRealVar* mean  = ws.var("mean");
-  RooRealVar* sigma = ws.var("sigma");
-
-  RooRealVar* dec   = ws.var("m_exp");
-
+  RooRealVar* mean = ws.var("mean");
+  RooRealVar* sigma1 = ws.var("sigma1");
+  RooRealVar* sigma2 = ws.var("sigma2");
+  RooRealVar* lambda = ws.var("lambda");
+  RooRealVar* m_jpsipi_mean1 = ws.var("m_jpsipi_mean1");
+  RooRealVar* m_jpsipi_mean2 = ws.var("m_jpsipi_mean2");
+  RooRealVar* m_jpsipi_mean3 = ws.var("m_jpsipi_mean3");
+  RooRealVar* m_jpsipi_sigma1l = ws.var("m_jpsipi_sigma1l");
+  RooRealVar* m_jpsipi_sigma1r = ws.var("m_jpsipi_sigma1r");
+  RooRealVar* m_jpsipi_sigma2 = ws.var("m_jpsipi_sigma2");
+  RooRealVar* m_jpsipi_sigma3 = ws.var("m_jpsipi_sigma3");
+  
   mean ->setConstant();
-  sigma->setConstant();
-  dec  ->setConstant();
+  sigma1->setConstant();
+  sigma2->setConstant();
+  lambda->setConstant();
+  m_jpsipi_mean1->setConstant();
+  m_jpsipi_mean2->setConstant();
+  m_jpsipi_mean3->setConstant();
+  m_jpsipi_sigma1l->setConstant();
+  m_jpsipi_sigma1r->setConstant();
+  m_jpsipi_sigma2->setConstant();
+  m_jpsipi_sigma3->setConstant();
 
   RooMsgService::instance().setSilentMode(true);
 
@@ -190,6 +212,25 @@ vector<TH1D*> splot(RooWorkspace& ws, TString variable, int nob)
   cout << "BgYield (after SPlot) = " << sData->GetYieldFromSWeight("n_combinatorial") << endl;
 
   ws.import(*data, Rename("dataWithSWeights"));
+
+}
+
+vector<TH1D*> GetSPlot(RooWorkspace& ws, int nob, TString label){
+
+  RooAbsPdf* model = ws.pdf("model");
+  RooRealVar* BpModel = ws.var("signal");
+  RooRealVar* BgModel = ws.var("fit_side");
+
+  RooRealVar* Bmass = ws.var("Bmass");
+  RooRealVar* variable = ws.var(label);
+
+  RooRealVar* BpYield = ws.var("n_signal");
+  RooRealVar* BgYield = ws.var("n_combinatorial");
+
+  double sigYield = BpYield->getVal();
+  double bkgYield = BgYield->getVal();
+
+  
 
   //Get the data with weights
   RooDataSet* dataW = (RooDataSet*)ws.data("dataWithSWeights");
@@ -205,6 +246,8 @@ vector<TH1D*> splot(RooWorkspace& ws, TString variable, int nob)
     if (histo_Bp_sig->GetBinContent(i)==0) histo_Bp_sig->SetBinError(i,0.);
     if (histo_Bp_bkg->GetBinContent(i)==0) histo_Bp_bkg->SetBinError(i,0.);
 
+    cout << "HERE!!!!!!!!!!!!" << endl;
+
     histo_Bp_sig->SetBinContent(i,histo_Bp_sig->GetBinContent(i)/sigYield);
     histo_Bp_sig->SetBinError(i,histo_Bp_sig->GetBinError(i)/sigYield);
 
@@ -217,101 +260,104 @@ vector<TH1D*> splot(RooWorkspace& ws, TString variable, int nob)
   histos.push_back(histo_Bp_bkg);
 
   return histos;
+  
+ 
 }
 
 std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n){
+
   TFile* fin_data = new TFile(f_input);
-  //tal como há bocado lê o ficheiro root 
-  TTree* t1_data = (TTree*)fin_data->Get("ntKp");
-  //a partir do ficheiro devolve o histograma
+//tal como há bocado lê o ficheiro root 
+TTree* t1_data = (TTree*)fin_data->Get("ntKp");
+//a partir do ficheiro devolve o histograma
 
-  RooRealVar Bmass = *(w->var("Bmass"));
-  RooRealVar Bpt = *(w->var("Bpt"));
-  RooRealVar By = *(w->var("By"));
-  RooRealVar Btrk1D0Err = *(w->var("Btrk1D0Err"));
-  RooRealVar Bmu1pt = *(w->var("Bmu1pt"));
-  RooRealVar Bmu1eta = *(w->var("Bmu1eta"));
-  RooRealVar Btrk1pt = *(w->var("Btrk1pt"));
-  RooRealVar Btrk1eta = *(w->var("Btrk1eta"));
-  RooRealVar Bchi2cl = *(w->var("Bchi2cl"));
-  RooRealVar BsvpvDistance = *(w->var("BsvpvDistance"));
-  RooRealVar BsvpvDistance_Err = *(w->var("BsvpvDistance_Err"));
-  RooRealVar Balpha = *(w->var("Balpha"));
-  RooRealVar Btrk1D0 = *(w->var("Btrk1D0"));
-  RooRealVar Btrk1Dz = *(w->var("Btrk1Dz"));
-  RooRealVar Bd0 = *(w->var("Bd0"));
-  RooRealVar Bd0err = *(w->var("Bd0err"));
-  RooRealVar Blxy = *(w->var("Blxy"));
-
-
-  RooArgSet arg_list(Bmass,Bpt,By, Btrk1D0Err, Bmu1pt, Bmu1eta, Btrk1pt, Btrk1eta);
-  arg_list.add(Bchi2cl);
-  arg_list.add(BsvpvDistance);
-  arg_list.add(Balpha);
-  arg_list.add(Btrk1D0);
-  arg_list.add(Btrk1Dz);
-  arg_list.add(Bd0);
-  arg_list.add(Blxy);
-  arg_list.add(Bd0err);
-  arg_list.add(BsvpvDistance_Err);
-  RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
-
-  //COMEÇA O QUE INTERESSA//
-
-  RooDataSet* reduceddata_side; //direita
-  // RooDataSet* reduceddata_aux; 
-  RooDataSet* reduceddata_central;
-
-  double left = 5.15;
-  double right = 5.4;
-  double mass_peak = 5.265;
+RooRealVar Bmass = *(w->var("Bmass"));
+RooRealVar Bpt = *(w->var("Bpt"));
+RooRealVar By = *(w->var("By"));
+RooRealVar Btrk1D0Err = *(w->var("Btrk1D0Err"));
+RooRealVar Bmu1pt = *(w->var("Bmu1pt"));
+RooRealVar Bmu1eta = *(w->var("Bmu1eta"));
+RooRealVar Btrk1pt = *(w->var("Btrk1pt"));
+RooRealVar Btrk1eta = *(w->var("Btrk1eta"));
+RooRealVar Bchi2cl = *(w->var("Bchi2cl"));
+RooRealVar BsvpvDistance = *(w->var("BsvpvDistance"));
+RooRealVar BsvpvDistance_Err = *(w->var("BsvpvDistance_Err"));
+RooRealVar Balpha = *(w->var("Balpha"));
+RooRealVar Btrk1D0 = *(w->var("Btrk1D0"));
+RooRealVar Btrk1Dz = *(w->var("Btrk1Dz"));
+RooRealVar Bd0 = *(w->var("Bd0"));
+RooRealVar Bd0err = *(w->var("Bd0err"));
+RooRealVar Blxy = *(w->var("Blxy"));
 
 
-  // reduceddata_aux = (RooDataSet*) data->reduce(Form("Bmass<%lf", left));
-  reduceddata_side = (RooDataSet*) data->reduce(Form("Bmass>%lf",right));
+RooArgSet arg_list(Bmass,Bpt,By, Btrk1D0Err, Bmu1pt, Bmu1eta, Btrk1pt, Btrk1eta);
+arg_list.add(Bchi2cl);
+arg_list.add(BsvpvDistance);
+arg_list.add(Balpha);
+arg_list.add(Btrk1D0);
+arg_list.add(Btrk1Dz);
+arg_list.add(Bd0);
+arg_list.add(Blxy);
+arg_list.add(Bd0err);
+arg_list.add(BsvpvDistance_Err);
+RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
 
-  //reduceddata_side->append(*reduceddata_aux);
+//COMEÇA O QUE INTERESSA//
 
-  reduceddata_central = (RooDataSet*) data->reduce(Form("Bmass>%lf",left));
-  reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf",right));
+ RooDataSet* reduceddata_side; //direita
+ // RooDataSet* reduceddata_aux; 
+ RooDataSet* reduceddata_central;
 
-  //SINAL//
-
-  RooRealVar mean("mean","mean",mass_peak,5.26,5.29);
-
-  RooRealVar sigma1("sigma1","sigma1",0.019,0.017,0.024);
-
-  RooGaussian signal1("signal1","signal_gauss1",Bmass,mean,sigma1);
-
-  RooRealVar sigma2("sigma2","sigma2",0.004,0.0035,0.010);
-
-  RooGaussian signal2("signal2","signal_gauss2",Bmass,mean,sigma2);
-
-  RooRealVar cofs("cofs", "cofs", 0.5, 0., 1.);
-
-  RooAddPdf signal("signal", "signal", RooArgList(signal1,signal2),cofs);
+ double left = 5.15;
+ double right = 5.4;
+ double mass_peak = 5.265;
 
 
+ // reduceddata_aux = (RooDataSet*) data->reduce(Form("Bmass<%lf", left));
+ reduceddata_side = (RooDataSet*) data->reduce(Form("Bmass>%lf",right));
 
-  //BACKGROUND//
+//reduceddata_side->append(*reduceddata_aux);
 
-  //ERROR FUNCTION//
-  RooRealVar m_nonprompt_scale("m_nonprompt_scale", "m_nonprompt_scale", 4.74168e-02, 0, 1);
-  //1.93204e-02, 0.001, 0.3);
-  RooRealVar m_nonprompt_shift("m_nonprompt_shift", "m_nonprompt_shift", 5.14425, 4.5, 6.);
-  //5.14357e+00,5.12,5.16);
+reduceddata_central = (RooDataSet*) data->reduce(Form("Bmass>%lf",left));
+reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf",right));
+
+//SINAL//
+
+ RooRealVar mean("mean","mean",mass_peak,5.26,5.29);
+
+ RooRealVar sigma1("sigma1","sigma1",0.019,0.017,0.024);
+
+ RooGaussian signal1("signal1","signal_gauss1",Bmass,mean,sigma1);
+
+ RooRealVar sigma2("sigma2","sigma2",0.004,0.0035,0.010);
+
+ RooGaussian signal2("signal2","signal_gauss2",Bmass,mean,sigma2);
+
+ RooRealVar cofs("cofs", "cofs", 0.5, 0., 1.);
+
+ RooAddPdf signal("signal", "signal", RooArgList(signal1,signal2),cofs);
+
+
+
+ //BACKGROUND//
+
+//ERROR FUNCTION//
+ RooRealVar m_nonprompt_scale("m_nonprompt_scale", "m_nonprompt_scale", 4.74168e-02, 0, 1);
+ //1.93204e-02, 0.001, 0.3);
+ RooRealVar m_nonprompt_shift("m_nonprompt_shift", "m_nonprompt_shift", 5.14425, 4.5, 6.);
+//5.14357e+00,5.12,5.16);
   
-  m_nonprompt_shift.setConstant(kTRUE);
-  m_nonprompt_scale.setConstant(kTRUE);
+ m_nonprompt_shift.setConstant(kTRUE);
+ m_nonprompt_scale.setConstant(kTRUE);
 
-  RooGenericPdf erf("erf","erf","TMath::Erfc((Bmass-m_nonprompt_shift)/m_nonprompt_scale)", RooArgList(Bmass,m_nonprompt_scale,m_nonprompt_shift));
+ RooGenericPdf erf("erf","erf","TMath::Erfc((Bmass-m_nonprompt_shift)/m_nonprompt_scale)", RooArgList(Bmass,m_nonprompt_scale,m_nonprompt_shift));
  
-  //EXPONENCIAL//
-  RooRealVar lambda("lambda","lambda",-2.,-5.,0.0);
-  RooExponential fit_side("fit_side", "fit_side_exp", Bmass, lambda);
+//EXPONENCIAL//
+ RooRealVar lambda("lambda","lambda",-2.,-5.,0.0);
+ RooExponential fit_side("fit_side", "fit_side_exp", Bmass, lambda);
 
 
-  ////////////////////////////////////////////////
+ ////////////////////////////////////////////////
  //jpsi_pi component
   RooRealVar m_jpsipi_mean1("m_jpsipi_mean1","m_jpsipi_mean1",5.34693e+00,Bmass.getAsymErrorLo(),Bmass.getAsymErrorHi());
   RooRealVar m_jpsipi_mean2("m_jpsipi_mean2","m_jpsipi_mean2",5.46876e+00,Bmass.getAsymErrorLo(),Bmass.getAsymErrorHi());
@@ -339,7 +385,7 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
 
   RooAddPdf jpsipi("jpsipi","jpsipi",RooArgList(m_jpsipi_gaussian3,m_jpsipi_gaussian2,m_jpsipi_gaussian1),RooArgList(m_jpsipi_fraction3,m_jpsipi_fraction2));
 
-  ///////////////////////////////////////////////
+ ///////////////////////////////////////////////
   Bmass.setRange("all", Bmass.getMin(),Bmass.getMax());
   Bmass.setRange("right",right,Bmass.getMax());
   Bmass.setRange("left",Bmass.getMin(),left);
@@ -377,6 +423,7 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
   model.fitTo(*data,Range("all"));
   //TUDO
 
+
   RooPlot* massframe = Bmass.frame(); //removi o título
   //o gráfico é feito em função da massa
 
@@ -390,27 +437,40 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
   //o background combinatório que vai ficar a azul e tracejado
 
   model.plotOn(massframe, RooFit::Name("Signal"),Components("signal"),Range("all"),LineColor(kOrange),LineStyle(kDashed));
-  //o sinal que vai ficar a laranja e ser uma linha a tracejado 
+ //o sinal que vai ficar a laranja e ser uma linha a tracejado 
 
   model.plotOn(massframe, RooFit::Name("B->J/psi X"),Components("erf"),Range("all"),LineColor(kGreen+3),LineStyle(kDashed));
-  //o background específico (partial reconstructed decays) que fica a verde e tracejado
+ //o background específico (partial reconstructed decays) que fica a verde e tracejado
 
   model.plotOn(massframe, RooFit::Name("B-> J/psi pi"),Components("jpsipi"),Range("all"),LineColor(kPink+10),LineStyle(kDashed));
   //parte correspondente ao Jpsipi que está a cor de rosa
 
 
-  //parâmetros//
+ //parâmetros//
 
-  model.paramOn(massframe,Layout(0.60,0.90,0.75));
-  //o tamanho da caixa de parâmetros vai de 60 a 90% do eixo dos xx, a parte de cima da caixa está a 75% do eixo dos yy.
-  massframe->getAttText()->SetTextSize(0.028);
+model.paramOn(massframe,Layout(0.60,0.90,0.75));
+ //o tamanho da caixa de parâmetros vai de 60 a 90% do eixo dos xx, a parte de cima da caixa está a 75% do eixo dos yy.
+massframe->getAttText()->SetTextSize(0.028);
 
   massframe->GetYaxis()->SetTitleOffset(1.3);
   massframe->SetXTitle("Bmass (GeV)");
 
   TCanvas d;
-  d.Divide(1,2);
-  d.cd(1);
+  TPad *p1 = new TPad("p1","p1",0.0,0.27,0.82,0.99);
+  p1->SetBorderMode(1); 
+  p1->SetFrameBorderMode(0); 
+  p1->SetBorderSize(2);
+  p1->SetBottomMargin(0.0);
+  p1->Draw(); 
+     
+  TPad *p2 = new TPad("p2","p2",0.0,0.065,0.82,0.24);
+  p2->SetTopMargin(0.);    
+  p2->SetBorderMode(0);
+  p2->SetBorderSize(2); 
+  p2->SetFrameBorderMode(0); 
+  p2->Draw();
+
+  p1->cd();
   massframe->Draw();
   TLatex* tex11 = new TLatex(0.6,0.8,"1.5 nb^{-1} (PbPb) 5.02 TeV");
   tex11->SetNDC(kTRUE);
@@ -426,11 +486,11 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
 
   double lambda_str = lambda.getVal();
   double lambda_err = lambda.getError();
-  //  double n_str = n.getVal();
-  // double n_err = n.getError();
+//  double n_str = n.getVal();
+ // double n_err = n.getError();
   double chis = massframe->chiSquare(); //chisquare
 
-  //  TLatex* tex12 = new TLatex(0.15, 0.25, Form("N = %.3lf #pm %.3lf",n_str,n_err));
+//  TLatex* tex12 = new TLatex(0.15, 0.25, Form("N = %.3lf #pm %.3lf",n_str,n_err));
   TLatex* tex12 = new TLatex(0.15, 0.85, Form("#lambda_{exp} = %.3lf #pm %.3lf",lambda_str,lambda_err));
   tex12->SetNDC(kTRUE);
   tex12->SetTextFont(42);
@@ -467,12 +527,12 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
 
   pull_plot->addPlotable(static_cast<RooPlotable*>(pull_hist),"P");
   pull_plot->SetTitle("");
-  pull_plot->GetXaxis()->SetTitle("nao sei");
+  pull_plot->GetXaxis()->SetTitle("");
   pull_plot->GetXaxis()->SetTitleFont(42);
   pull_plot->GetXaxis()->SetTitleSize(0.17);
   pull_plot->GetXaxis()->SetTitleOffset(1.09);
 
-  pull_plot->GetXaxis()->SetLabelFont(42);
+  pull_plot->GetXaxis()->SetLabelFont(40);
   pull_plot->GetXaxis()->SetLabelSize(0.17);
   pull_plot->GetXaxis()->SetLabelOffset(0.01);
   pull_plot->GetXaxis()->SetTickLength(0.15);
@@ -482,19 +542,20 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
   pull_plot->GetYaxis()->SetTitleSize(0.20);
   pull_plot->GetYaxis()->SetTitleOffset(0.15);
 
-  pull_plot->GetYaxis()->SetLabelFont(42);
+  pull_plot->GetYaxis()->SetLabelFont(40);
   pull_plot->GetYaxis()->SetLabelSize(0.14);
   pull_plot->GetYaxis()->SetLabelOffset(0.005);
   
   pull_plot->GetYaxis()->SetNdivisions(305);
 
-  //Colocando no canvas d:
-
-  d.cd(2);
+  p2->cd();
   pull_plot->Draw();
-  d.Draw();
 
   ///////////////////////////////////////////////////////////////////////
+
+  w->import(model);
+  //w->import(n_signal);
+  //w->import(n_combinatorial);
  
   d.SaveAs("mc_validation_plots/fit_side.pdf"); //ACABA O QUE INTERESSA//
 									  
@@ -511,12 +572,12 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
   //std::cout<< std::endl << "Integral left band: " << int_fit_side_left->getVal() << std::endl;
   std::cout<< std::endl << "Integral right band: " << int_fit_side_right->getVal() << std::endl;
 
-  //  double factor = (int_fit_peak->getVal())/(int_fit_side_left->getVal()+int_fit_side_right->getVal());
+//  double factor = (int_fit_peak->getVal())/(int_fit_side_left->getVal()+int_fit_side_right->getVal());
   double factor = (int_fit_peak->getVal())/(int_fit_side_right->getVal());
 
   std::cout << std::endl << "Factor: " << factor << std::endl;
   for(int i=0; i<16; i++){
-    std::cout << "bins: " << n[i] << std::endl;
+   std::cout << "bins: " << n[i] << std::endl;
   } 
 
   std::vector<TH1D*> histos;
@@ -537,8 +598,8 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
   histos.push_back(create_histogram(Bd0, "Bd0",factor, reduceddata_side, reduceddata_central, data, n[13]));
   histos.push_back(create_histogram(Blxy, "Blxy",factor, reduceddata_side, reduceddata_central, data, n[14]));
   histos.push_back(create_histogram(Bd0err, "Bd0err",factor, reduceddata_side, reduceddata_central, data, n[15]));
-  return histos;
-  //o que a sideband_subtraction me devolve para eu usar na função main para obter os histogramas dos dados
+return histos;
+//o que a sideband_subtraction me devolve para eu usar na função main para obter os histogramas dos dados
 }
 
 
