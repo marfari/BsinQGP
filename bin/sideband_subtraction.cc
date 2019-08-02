@@ -346,8 +346,21 @@ massframe->getAttText()->SetTextSize(0.028);
   massframe->SetXTitle("Bmass (GeV)");
 
   TCanvas d;
-  d.Divide(1,2);
-  d.cd(1);
+  TPad *p1 = new TPad("p1","p1",0.0,0.27,0.82,0.99);
+  p1->SetBorderMode(1); 
+  p1->SetFrameBorderMode(0); 
+  p1->SetBorderSize(2);
+  p1->SetBottomMargin(0.0);
+  p1->Draw(); 
+     
+  TPad *p2 = new TPad("p2","p2",0.0,0.065,0.82,0.24);
+  p2->SetTopMargin(0.);    
+  p2->SetBorderMode(0);
+  p2->SetBorderSize(2); 
+  p2->SetFrameBorderMode(0); 
+  p2->Draw();
+
+  p1->cd();
   massframe->Draw();
   TLatex* tex11 = new TLatex(0.6,0.8,"1.5 nb^{-1} (PbPb) 5.02 TeV");
   tex11->SetNDC(kTRUE);
@@ -404,12 +417,12 @@ massframe->getAttText()->SetTextSize(0.028);
 
   pull_plot->addPlotable(static_cast<RooPlotable*>(pull_hist),"P");
   pull_plot->SetTitle("");
-  pull_plot->GetXaxis()->SetTitle("nao sei");
+  pull_plot->GetXaxis()->SetTitle("");
   pull_plot->GetXaxis()->SetTitleFont(42);
   pull_plot->GetXaxis()->SetTitleSize(0.17);
   pull_plot->GetXaxis()->SetTitleOffset(1.09);
 
-  pull_plot->GetXaxis()->SetLabelFont(42);
+  pull_plot->GetXaxis()->SetLabelFont(40);
   pull_plot->GetXaxis()->SetLabelSize(0.17);
   pull_plot->GetXaxis()->SetLabelOffset(0.01);
   pull_plot->GetXaxis()->SetTickLength(0.15);
@@ -419,17 +432,14 @@ massframe->getAttText()->SetTextSize(0.028);
   pull_plot->GetYaxis()->SetTitleSize(0.20);
   pull_plot->GetYaxis()->SetTitleOffset(0.15);
 
-  pull_plot->GetYaxis()->SetLabelFont(42);
+  pull_plot->GetYaxis()->SetLabelFont(40);
   pull_plot->GetYaxis()->SetLabelSize(0.14);
   pull_plot->GetYaxis()->SetLabelOffset(0.005);
   
   pull_plot->GetYaxis()->SetNdivisions(305);
 
-  //Colocando no canvas d:
-
-  d.cd(2);
+  p2->cd();
   pull_plot->Draw();
-  d.Draw();
 
   ///////////////////////////////////////////////////////////////////////
  
