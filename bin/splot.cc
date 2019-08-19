@@ -34,48 +34,62 @@ using namespace RooStats;
 using namespace std;
 
 void DoSPlot(RooWorkspace&,int);
+//pede: workspace e canal
 void MakePlots(RooWorkspace&,int,TString);
+//pede: workspace, o número de bins e a variável da lista com que quero trabalhar
 void build_pdf(RooWorkspace&,int);
+//pede: workspace e canal
 void read_data(RooWorkspace&,TString,TString,int);
+//pede: workspace, input dos dados, a variável da lista c/ que vou trabalhar e o canal
 TString channel_to_ntuple_name(int);
 void set_up_workspace_variables(RooWorkspace&);
 
-void splot_Bp_allVariables() {
+//FUNÇÃO PRINCIPAL = main//
+
+int main(){
+//void splot_Bp_allVariables() {
 
   const int n_var = 16;
   int channel = 1; // B+
+  //CANAL-NÃO VAMOS UTILIZAR NO NOSSO CASO, POIS ESTAMOS A FAZER APENAS PARA O B+//
   int n_bins[n_var]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10};
   TString variables [n_var] = {"Bpt","By","Btrk1D0Err","Bmu1pt","Bmu1eta","Btrk1pt","Btrk1eta","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1D0","Btrk1Dz","Bd0","Blxy","Bd0err"};
-  TString input_file_Bp = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
+  TString input_file_Bp = "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_data_ntKp_PbPb_2018.root"; //input
 
-  for(int i = 0;i<n_var;i++)   {
-    RooWorkspace* ws = new RooWorkspace("WS");
+  //CICLO FOR
+  for(int i = 0;i<n_var;i++)   { //percorro as variáveis (16)
+    RooWorkspace* ws = new RooWorkspace("WS"); //crio um workspace para as variáveis
     set_up_workspace_variables(*ws);
-    read_data(*ws, input_file_Bp, variables[i], channel);
+    read_data(*ws, input_file_Bp, variables[i], channel); //executo a função read_data (ver abaixo o que faz). ela recebe o workspace que criei, o input dos dados, a variável com que estou a trabalhar que está na lista e o canal.
 
-    DoSPlot(*ws,channel);   
-    MakePlots(*ws,n_bins[i],variables[i]);
-    delete ws;   
+    DoSPlot(*ws,channel); //executo a função dosplot (ver abaixo o que faz). ela recebe o workspace que criei e o canal.
+    MakePlots(*ws,n_bins[i],variables[i]); //executo a função makeplots (ver abaixo o que faz). ela recebe o workspace, o número de bins e a variável da lista com que quero trabalhar. aqui vou finalmente fazer os plots.
+    delete ws;  //no final apago o workspace que criei para a variável com que trabalhei para que possa ser criado um novo para a próxima variável
   }
 }
 
 void DoSPlot(RooWorkspace& ws,int channel){
 
   build_pdf(ws,channel);
+  //executa a fc build_pdf que me guarda no workspace o fit
   RooAbsPdf*  model = ws.pdf("model");
   RooDataSet* data = (RooDataSet*) ws.data("data");
+  //vou buscar ao workspace o fit e o dataset
 
   RooRealVar* BpYield = ws.var("n_signal");
   RooRealVar* BgYield = ws.var("n_combinatorial");
+  //vou buscar ao workspace o n do sinal e o n do background combinatório
 
   //cout<<"BpYield = "<<BpYield->getVal()<<endl;
   //cout<<"BgYield = "<<BgYield->getVal()<<endl;
 
   model->fitTo(*data,Extended());
+  //represento o fit dos dados
 
   RooRealVar* mean  = ws.var("m_mean");
   RooRealVar* sigma = ws.var("m_sigma1");
   RooRealVar* dec   = ws.var("m_exp");
+  //vou buscar ao workspace os parâmetros que me ajudaram a fazer o fit: a média e o sigma da gaussiana e o lambda da exponencial
 
   mean ->setConstant();
   sigma->setConstant();
@@ -86,6 +100,9 @@ void DoSPlot(RooWorkspace& ws,int channel){
   //add sWeights to dataset based on model and yield variables
   //sPlot class adds a new variable that has the name of the corresponding yield + "_sw".
   SPlot* sData = new SPlot("sData","An sPlot",*data, model, RooArgList(*BpYield,*BgYield));
+
+  //An SPlot gives us the distribution of some variable, x in our data sample for a given species (eg. signal or background). The result is similar to a likelihood projection plot, but no cuts are made, so every event contributes to the distribution.
+
 
   cout << endl <<  "Yield of B+ is "
        << BpYield->getVal() << ".  From sWeights it is "
@@ -107,9 +124,11 @@ void DoSPlot(RooWorkspace& ws,int channel){
   cout << endl;
 
   ws.import(*data, Rename("dataWithSWeights"));
+  //no final é guardado no workspace o resultado do SPlot: os dados com os seus pesos, isto é a probabilidade de serem background e a probabilidade de serem sinal
 }
 
 void MakePlots(RooWorkspace& ws, int nob, TString label){
+  //recebe o workspace, o número de bins e a variável c/que quero trabalhar
 
   TCanvas* cdata = new TCanvas("sPlot","sPlot", 800, 600);
   cdata->Divide(2,2);
@@ -171,8 +190,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   cdata->cd(3);  ptframe2Bp->Draw();
   cdata->cd(4);  ptframe2Bg->Draw();
 
-  cdata->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_Bplus_Bmass_"+label+".gif");
-  cdata->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_Bplus_Bmass_"+label+".pdf");
+  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_Bmass_"+label+".gif");
+  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_Bmass_"+label+".pdf");
 
 
   TH1D* histo_Bp_sig = (TH1D*)dataWBp->createHistogram(label,nob,0,0);
@@ -204,8 +223,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_sig->SetStats(0);
   histo_Bp_sig->Draw("E");
 
-  prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_Bplus_"+label+".gif");
-  prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_Bplus_"+label+".pdl");
+  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".gif");
+  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".pdl");
 
   TCanvas* prov_bkg = new TCanvas ("prov_bkg","c2",200,10,700,500);
   prov_bkg->cd();
@@ -220,8 +239,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_bkg->SetStats(0);
   histo_Bp_bkg->Draw("E");
 
-  prov_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_Bplus_"+label+".gif");
-  prov_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_Bplus_"+label+".pdf");
+  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".gif");
+  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".pdf");
 
 
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500);
@@ -235,8 +254,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
    legend->AddEntry(histo_Bp_bkg,"Background","lep");
    legend->Draw();
 
-  sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_SigBkg_"+label+".gif");
-  sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/splot/sPlot_SigBkg_"+label+".pdf");
+  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_SigBkg_"+label+".gif");
+  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_SigBkg_"+label+".pdf");
 
   //cleanup
   delete cdata;
@@ -275,17 +294,20 @@ TString channel_to_ntuple_name(int channel)
 } // "CHANNEL TO NTUPLE NAME" ENDS
 
 
-void read_data(RooWorkspace& w, TString filename,TString var_label ,int channel) //SELECT DATA
+void read_data(RooWorkspace& w, TString filename,TString var_label ,int channel) //SELECT DATA: recebe o workspace, o input dos dados, a variável da lista e o canal e no final guarda no workspace o dataset
 {
 
   TFile* f = new TFile(filename);
+  //a partir do input cria um file f
   std::cout<<"new file"<<std::endl;
   TNtupleD* _nt = (TNtupleD*)f->Get(channel_to_ntuple_name(channel));
+  //a partir do canal cria um tuplo
   std::cout<<"new ntuple"<<std::endl;
 
   RooArgList arg_list ("arg_list");
   arg_list.add(*(w.var("Bmass")));
   arg_list.add(*(w.var(var_label)));
+  //cria uma lista de argumentos à qual lhe adiciona a massa invariante e as outras variáveis que estam na lista
 
   //RooRealVar* Bmass = w.var("Bmass");
   //RooRealVar* variable = w.var(var_label);
@@ -293,11 +315,12 @@ void read_data(RooWorkspace& w, TString filename,TString var_label ,int channel)
   RooDataSet* data = new RooDataSet("data","data",_nt,arg_list);
 
   w.import(*data, Rename("data"));
+  //cria um novo dataset que guarda no workspace
 
 } // "READ DATA" ENDS
 
 void build_pdf(RooWorkspace& w,int channel) {
-
+  //recebe o workspace e o canal e no final guarda no workspace o fit
  double mass_peak;
  RooRealVar Bmass = *(w.var("Bmass"));
  RooRealVar Bpt = *(w.var("Bpt"));
