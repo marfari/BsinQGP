@@ -7,8 +7,7 @@
 <environment>
   <bin name="selection_skimmer"   file="selection_skimmer.cc"></bin>
   <bin name="sideband_subtraction" file="sideband_subtraction.cc"></bin>
-<bin name="splot" file="splot.cc"></bin>
-<bin name="rascunho" file="rascunho.cc"></bin>
+<bin name="ss_and_splot" file="ss_and_splot.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>

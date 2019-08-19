@@ -1,4 +1,4 @@
-//Fizémos dois métodos: 1.sideband_subtraction 2.splot
+//Este código contem os dois métodos: splot e sideband_subtraction. Para ver a versão atualizada e "mais limpa" ver o ss_and_splot.cc
 
 #include <sstream>
 #include <vector>
@@ -63,7 +63,8 @@ using namespace std;
 
 void DoSPlot(RooWorkspace&);
 //pede: workspace
-void MakePlots(RooWorkspace&, int, TString);
+//void MakePlots(RooWorkspace&, int, TString);
+TH1D* MakePlots(RooWorkspace&, int, TString);
 //pede: workspace, nº de bins e a variável da lista com que quero trabalhar
 void read_data(RooWorkspace&, TString, TString);
 //pede: workspace, input dos dados e a variável da lista com que vou trabalhar
@@ -100,6 +101,7 @@ int main(){
   
   //HISTOGRAMA DOS DADOS
   histos_data = sideband_subtraction(ws, input_file_data, n_bins);
+
   //PARA O HISTROGAMA MC
   TFile *fin_mc = new TFile(input_file_mc);
   //lê o ficheiro root
@@ -144,28 +146,86 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      c.SaveAs("mc_validation_plots/"+names[i]+"_mc_validation.pdf");
+      c.SaveAs("teste/mc_validation_plots/ss_mc/"+names[i]+"_mc_validation.pdf");
       leg->Delete();
       //tex->Delete();
-      histos_mc[i]->Delete();
-      histos_data[i]->Delete();
+      // histos_mc[i]->Delete();
+      // histos_data[i]->Delete();
+      //não os apago, pq vou precisar dos mesmos
 
     }
 //////////////////////////////////////////////  
-//SPLOT//
-   delete ws;
+//IGUAL ATÉ AQUI//
+
+//splot method//
+  delete ws;
   //começo por apagar o workspace que criei anteriormente
+
+
+  std::vector<TH1D*> histos_splot;
+  //vetor por enquanto vazio
 
  //ciclo for
   for(int i = 0;i<n_var;i++)   { //percorro as variáveis (16)
     RooWorkspace* ws = new RooWorkspace("WS"); //crio um workspace para as variáveis
     set_up_workspace_variables(*ws);
-    read_data(*ws, input_file_data, variables[i]); //executo a função read_data (ver abaixo o que faz). ela recebe o workspace que criei, o input dos dados e a variável com que estou a trabalhar que está na lista. 
 
+    read_data(*ws, input_file_data, variables[i]); //executo a função read_data (ver abaixo o que faz). ela recebe o workspace que criei, o input dos dados e a variável com que estou a trabalhar que está na lista. 
     DoSPlot(*ws); //executo a função dosplot (ver abaixo o que faz). ela recebe o workspace que criei.
-    MakePlots(*ws,n_bins[i],variables[i]); //executo a função makeplots (ver abaixo o que faz). ela recebe o workspace, o número de bins e a variável da lista com que quero trabalhar. aqui vou finalmente fazer os plots.
-    delete ws;  //no final apago o workspace que criei para a variável com que trabalhei para que possa ser criado um novo para a próxima variável
+
+    histos_splot.push_back(MakePlots(*ws,n_bins[i],variables[i]));
+
+  std::cout<< "AQUI! ";
+  //  TH1D* h = new TH1D(var.GetName(), var.GetName(), n_bins[i], var.getMin(), var.getMax()); //O ERRO ESTÁ AQUI, POIS NÃO SABE O QUE É A VAR
+    //h vai ser o histograma para a variável com que estou a trabalhar-->descomentar
+
+  // h = MakePlots(*ws,n_bins[i],variables[i]);
+
+  // histos_splot.push_back(h); //ao vetor dos histogramas das variáveis vou acrescentando o histograma de cada variável
+
+  delete ws;
+
   }//termina o ciclo for
+
+  // SB vs Splot vs MC comparison
+  // for(int i = 0;i<n_var;i++) { //percorro as variáveis (16)-->descomentar quando fizer mais variáveis
+
+
+ for(int i=0; i<(int)histos_data.size(); i++)
+    {
+      TCanvas a;
+      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      histos_mc[i]->SetYTitle("normalized entries");
+      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      histos_mc[i]->SetStats(0);
+      histos_splot[i]->SetStats(0);
+      histos_data[i]->SetStats(0);
+      histos_mc[i]->Scale(1/histos_mc[i]->Integral());
+      histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+      histos_data[i]->Scale(1/histos_data[i]->Integral());
+      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->Draw();
+      histos_splot[i]->Draw("same");
+      histos_data[i]->Draw("same");
+  
+	
+      TLegend* leg;
+
+      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+      leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
+      leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
+      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      leg->SetTextSize(0.03);
+      leg->Draw("same");
+
+      a.SaveAs("teste/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation.pdf");
+
+      leg->Delete();
+      histos_mc[i]->Delete();
+      histos_data[i]->Delete();
+      histos_splot[i]->Delete();
+   
+    }      
 
 }
 //ACABA A MAIN FUNCTION
@@ -221,7 +281,6 @@ void DoSPlot(RooWorkspace& ws){
   RooRealVar* sigma = ws.var("sigma1");
   RooRealVar* dec   = ws.var("lambda");
   //vou buscar ao workspace os parâmetros que me ajudaram a fazer o fit: a média e o sigma da gaussiana e o lambda da exponencial
-std::cout<<"foi aqui"<<std::endl;
   mean->setConstant();
   sigma->setConstant();
   dec->setConstant();
@@ -254,7 +313,8 @@ std::cout<<"foi aqui"<<std::endl;
 
   cout << endl;
 
-  ws.import(*data, Rename("dataWithSWeights"));
+  ws.import(*data, Rename("dataWithSWeights")); //está a dar erro, pois o nome já foi usado
+
   //no final é guardado no workspace o resultado do SPlot: os dados com os seus pesos, isto é a probabilidade de serem background e a probabilidade de serem sinal
 }
 
@@ -374,7 +434,8 @@ void build_pdf(RooWorkspace& w) {
 
 
 //makeplots
-void MakePlots(RooWorkspace& ws, int nob, TString label){
+TH1D* MakePlots(RooWorkspace& ws, int nob, TString label){
+  //void MakePlots(RooWorkspace& ws, int nob, TString label){
   //recebe o workspace, o número de bins e a variável c/que quero trabalhar
 
   TCanvas* cdata = new TCanvas("sPlot","sPlot", 800, 600);
@@ -438,9 +499,9 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   cdata->cd(4);  ptframe2Bg->Draw();
 
   
-  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/Bmass/"+label+"sPlot.gif");
+  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/Bmass/"+label+"sPlot.gif");
 
-  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/Bmass/"+label+"sPlot.pdf");
+  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/Bmass/"+label+"sPlot.pdf");
 
 
   TH1D* histo_Bp_sig = (TH1D*)dataWBp->createHistogram(label,nob,0,0);
@@ -463,8 +524,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   prov->cd();
   histo_Bp_sig->SetMarkerStyle(20);
   histo_Bp_sig->SetMarkerSize(0.);
-  histo_Bp_sig->SetMarkerColor(kBlue);
-  histo_Bp_sig->SetLineColor(kBlue);
+  histo_Bp_sig->SetMarkerColor(kRed);
+  histo_Bp_sig->SetLineColor(kRed);
   histo_Bp_sig->SetTitle("");
   histo_Bp_sig->GetYaxis()->SetTitle(TString::Format("Events /(%g)",(variable->getMax()-variable->getMin())/nob));
   histo_Bp_sig->GetXaxis()->SetTitle(label );
@@ -472,15 +533,16 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_sig->SetStats(0);
   histo_Bp_sig->Draw("E");
 
-  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/sig/"+label+"sPlot.gif");
-  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/sig/"+label+"sPlot.pdl"); 
+  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.gif");
+  // prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.pdl"); 
+  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.pdf");
 
   TCanvas* prov_bkg = new TCanvas ("prov_bkg","c2",200,10,700,500);
   prov_bkg->cd();
   histo_Bp_bkg->SetMarkerStyle(20);
   histo_Bp_bkg->SetMarkerSize(0.);
-  histo_Bp_bkg->SetMarkerColor(kRed);
-  histo_Bp_bkg->SetLineColor(kRed);
+  histo_Bp_bkg->SetMarkerColor(kBlue);
+  histo_Bp_bkg->SetLineColor(kBlue);
   histo_Bp_bkg->SetTitle("");
   histo_Bp_bkg->GetYaxis()->SetTitle(TString::Format("Events /(%g)",(variable->getMax()-variable->getMin())/nob));
   histo_Bp_bkg->GetXaxis()->SetTitle(label);
@@ -488,8 +550,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_bkg->SetStats(0);
   histo_Bp_bkg->Draw("E");
 
-  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/bkg/"+label+"sPlot.gif");
-  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/bkg/"+label+"sPlot.pdf");
+  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/bkg/"+label+"sPlot.gif");
+  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/bkg/"+label+"sPlot.pdf");
 
 
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500); 
@@ -503,18 +565,23 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
    legend->AddEntry(histo_Bp_bkg,"Background","lep");
    legend->Draw();
 
-  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/sig_bkg/"+label+"sPlot.gif");
-  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/mc_validation_plots/splot/sig_bkg/"+label+"sPlot.pdf");
+  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig_bkg/"+label+"sPlot.gif");
+  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig_bkg/"+label+"sPlot.pdf");
 
   //cleanup
   delete cdata;
   delete prov;
   delete prov_bkg;
   delete sig_bkg;
+
+  
+return histo_Bp_sig;
+
 } // "MAKE SPLOT" ENDS 
 
 //////////////////////////////////////////////
 std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n){
+
   TFile* fin_data = new TFile(f_input);
   //tal como há bocado lê o ficheiro root 
   TTree* t1_data = (TTree*)fin_data->Get("ntKp");
@@ -573,11 +640,11 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w,TString f_input, int* n)
 
   RooRealVar mean("mean","mean",mass_peak,5.26,5.29);
 
-  RooRealVar sigma1("sigma1","sigma1",0.019,0.017,0.024);
+  RooRealVar sigma1("sigma1","sigma1",0.021,0.020,0.030);
 
   RooGaussian signal1("signal1","signal_gauss1",Bmass,mean,sigma1);
 
-  RooRealVar sigma2("sigma2","sigma2",0.004,0.0035,0.010);
+  RooRealVar sigma2("sigma2","sigma2",0.011,0.010,0.020);
 
   RooGaussian signal2("signal2","signal_gauss2",Bmass,mean,sigma2);
 
@@ -811,7 +878,7 @@ massframe->getAttText()->SetTextSize(0.028);
 
   ///////////////////////////////////////////////////////////////////////
  
-  d.SaveAs("mc_validation_plots/fit_side.pdf"); //ACABA O QUE INTERESSA//
+  d.SaveAs("teste/fit_side.pdf"); //ACABA O QUE INTERESSA//
 									  
 
   std::cout << std::endl << "chisquare: " << massframe->chiSquare() << std::endl;
@@ -868,8 +935,8 @@ TH1D* create_histogram(RooRealVar var, TTree* t, int n){
 
   h = (TH1D*)gDirectory->Get("htemp")->Clone();
   h->SetTitle("");
-  h->SetMarkerColor(kBlack);
-  h->SetLineColor(kBlack);
+  h->SetMarkerColor(kGreen);
+  h->SetLineColor(kGreen);
   return h;
 }
 
@@ -935,7 +1002,7 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   std::cout<<"name: "<<var.GetName()<<std::endl;
   std::cout<<"histo name: "<<dist_peak->GetName()<<std::endl;
 
-  c.SaveAs("mc_validation_plots/sideband_sub/"+name + "sideband_sub.pdf");
+  c.SaveAs("teste/sideband_sub/"+name + "sideband_sub.pdf");
 
   return dist_peak;
 
