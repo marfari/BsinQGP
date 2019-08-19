@@ -55,7 +55,7 @@ using namespace std;
 //two methods: sideband subtraction and splot
 
 std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n);
-TH1D* splot_method(RooWorkspace&, int, TString);
+std::vector<TH1D*> splot_method(RooWorkspace& w, int n, TString label);
 
 //auxiliary functions
 
@@ -66,6 +66,7 @@ void read_data(RooWorkspace& w, TString f_input);
 void build_pdf (RooWorkspace& w);
 void plot_complete_fit(RooWorkspace& w);
 void do_splot(RooWorkspace& w);
+TH1D* make_splot(RooWorkspace& w, int n, TString label);
 
 
 //main function
@@ -84,10 +85,10 @@ int main(){
   std::vector<TH1D*> histos_splot;
   //vector that contains the data histograms after the application of the splot method
 
-  const int n_var = 16;
+  //const int n_var = 16;
   //number of variables
-   int n_bins[]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10, 10, 10};
-   //number of bins
+  int n_bins[]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+  //number of bins
 
   TString variables[]={"Bpt","By","Btrk1D0Err","Bmu1pt","Bmu1eta","Btrk1pt","Btrk1eta","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1D0","Btrk1Dz","Bd0","Blxy","Bd0err"};
   
@@ -119,11 +120,8 @@ int main(){
   }
 
   //splot histograms
-  // do_splot(*ws);
-
-  //for(int i = 0; i<n_var;i++) {
-  // histos_splot.push_back(splot_method(*ws,n_bins[i],variables[i]));
-  // }
+  do_splot(*ws);
+  histos_splot = splot_method(ws,n_bins,variables);
   
   
   //sideband subtraction method vs. monte carlo
@@ -161,11 +159,6 @@ int main(){
       leg->Delete();
 
     }
-
-  do_splot(*ws);
-  for(int i = 0;i<n_var;i++){
-    histos_splot.push_back(splot_method(*ws,n_bins[i],variables[i]));
-  }
 
   //sideband subtraction method vs. monte carlo vs splot
   for(int i=0; i<(int)histos_data.size(); i++)
@@ -728,8 +721,7 @@ void do_splot(RooWorkspace& w){
 
 //do_splot ends
 
-//SPLOT METHOD//
-TH1D* splot_method(RooWorkspace& w, int n, TString label){
+TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   //saves the plots of signal distributions, background distributions and signal+background distributions
   //in the end returns the histogram of signal
@@ -873,7 +865,19 @@ TH1D* splot_method(RooWorkspace& w, int n, TString label){
   return histo_Bp_sig;
 
 } 
-//splot_method ends
+//make_splot ends
+
+//SPLOT_METHOD//
+std::vector<TH1D*> splot_method(RooWorkspace& w, int n, TString label){
+
+  std::vector<TH1D*> histos;
+
+  for(int i = 0;i<16;i++){
+    histos.push_back(make_splot(ws,n[i],label[i]));
+  }
+
+  return histos;
+}
 
 
 void set_up_workspace_variables(RooWorkspace& w)
