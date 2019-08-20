@@ -104,6 +104,8 @@ int main(){
   //splot histograms
   do_splot(*ws);
   histos_splot = splot_method(*ws,n_bins,variables);
+
+  //COMPARISONS//
   
   //sideband subtraction method vs. monte carlo
   for(int i=0; i<(int)histos_data.size(); i++)
@@ -117,9 +119,12 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_data[i]->Draw("same");
+
+      //--TRATIOS--//
+ 
       auto rp = new TRatioPlot(histos_data[i], histos_mc[i], "divsym");
       c.SetTicks(0, 1);
       rp->SetH1DrawOpt("E");
@@ -157,19 +162,10 @@ int main(){
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
       histos_data[i]->Draw("same");
-
-      //TRatio Plot Data(sideband_sub)/MC
-      auto rp = new TRatioPlot(histos_data[i], histos_mc[i], "divsym");
-      a.SetTicks(0, 1);
-      rp->SetH1DrawOpt("E");
-      rp->Draw("nogrid");
-      rp->GetLowerRefYaxis()->SetTitle("Data(ss)/MC");
-      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
-      a.Update();
 	
       TLegend* leg;
 
@@ -181,11 +177,12 @@ int main(){
       leg->Draw("same");
 
       a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation.gif");
       leg->Delete();
 
     }
- 
-  //Splot vs MC comparison
+
+  //SPlot method vs MC
 
   for(int i=0; i<(int)histos_data.size(); i++)
     {
@@ -195,9 +192,12 @@ int main(){
       histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
       histos_mc[i]->SetStats(0);
       histos_splot[i]->SetStats(0);
+
+      //normalization
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -221,6 +221,51 @@ int main(){
       leg->Draw("same");
 
       a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation.gif");
+
+      leg->Delete();
+    }    
+ 
+  //SPlot vs sideband_subtraction
+
+  for(int i=0; i<(int)histos_data.size(); i++)
+    {
+      TCanvas a;
+      histos_data[i]->SetYTitle("normalized entries");
+      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      histos_data[i]->SetStats(0);
+      histos_splot[i]->SetStats(0);
+
+      //normalization
+      histos_data[i]->Scale(1/histos_data[i]->Integral());
+      histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+
+      histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_data[i]->Draw();
+      histos_splot[i]->Draw("same");
+
+      //--TRATIOS--//
+
+      //TRatioPlot Data(sideband_sub)/Data(SPlot)
+      auto rp = new TRatioPlot(histos_data[i], histos_splot[i], "divsym");
+      a.SetTicks(0, 1);
+      rp->SetH1DrawOpt("E");
+      rp->Draw("nogrid");
+      rp->GetLowerRefYaxis()->SetTitle("Data(ss)/Data(sp)");
+      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
+      a.Update();
+     
+      TLegend* leg;
+
+      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+      leg->AddEntry(histos_data[i]->GetName(), "Sideband Subtraction", "l");
+      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      leg->SetTextSize(0.03);
+      leg->Draw("same");
+
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+names[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+names[i]+"_mc_validation.gif");
+
 
       leg->Delete();
       histos_mc[i]->Delete();
@@ -637,7 +682,7 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   TLegend *leg = new TLegend (0.7, 0.5, 0.85, 0.65);
   leg->AddEntry(var.GetName(), "Signal", "l");
   leg->AddEntry("dist_side", "Background", "l");
-  leg->AddEntry("hist_dist_peak", "Sinal inicial", "l");
+  leg->AddEntry("hist_dist_peak", "Total", "l");
   leg->Draw("same");
 
   std::cout<<"name: "<<var.GetName()<<std::endl;
@@ -949,8 +994,8 @@ void set_up_workspace_variables(RooWorkspace& w)
   mass_min=5.;
   mass_max=6.;
 
-  pt_min=0.;
-  pt_max=90.;
+  pt_min=5.;
+  pt_max=100.;
 
   y_min=-2.4;
   y_max=2.4;

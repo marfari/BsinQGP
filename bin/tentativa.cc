@@ -119,7 +119,7 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_data[i]->Draw("same");
 
@@ -162,7 +162,7 @@ int main(){
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
       histos_data[i]->Draw("same");
@@ -197,7 +197,7 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -240,7 +240,7 @@ int main(){
       histos_data[i]->Scale(1/histos_data[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      histos_data[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_data[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -682,7 +682,7 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   TLegend *leg = new TLegend (0.7, 0.5, 0.85, 0.65);
   leg->AddEntry(var.GetName(), "Signal", "l");
   leg->AddEntry("dist_side", "Background", "l");
-  leg->AddEntry("hist_dist_peak", "Sinal inicial", "l");
+  leg->AddEntry("hist_dist_peak", "Total", "l");
   leg->Draw("same");
 
   std::cout<<"name: "<<var.GetName()<<std::endl;
