@@ -1,4 +1,3 @@
-
 #include <sstream>
 #include <vector>
 #include <TStyle.h>
@@ -1146,7 +1145,7 @@ void set_up_workspace_variables(RooWorkspace& w)
   mass_min=5.;
   mass_max=6.;
 
-  pt_min=5.;
+  pt_min=4.;
   pt_max=100.;
 
   y_min=-2.4;
@@ -1262,8 +1261,10 @@ void set_up_workspace_variables(RooWorkspace& w)
   w.import(Btrk1DxyError1);
   w.import(Bd0);
   w.import(Bd0err);
-  // w.import(Pthatweight);
+  //w.import(Pthatweight);
   //w.import(HiBin);
 
 }
 //end
+
+
