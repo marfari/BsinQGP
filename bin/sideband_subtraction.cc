@@ -80,9 +80,9 @@ int main(){
 
   const int n_var = 16;
 
-  TString input_file_data = "/home/t3cms/ev19u033/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
+  TString input_file_data = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_data_ntKp_PbPb_2018.root";
   //input-dados
-  TString input_file_mc = "/home/t3cms/ev19u033/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_mc_ntKp_PbPb_2018_pthatweight.root";
+  TString input_file_mc = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_mc_ntKp_PbPb_2018_pthatweight.root";
   //input-MC
 
   std::vector<TH1D*> histos_data;
@@ -499,9 +499,9 @@ TH1D* MakePlots(RooWorkspace& ws, int nob, TString label){
   cdata->cd(4);  ptframe2Bg->Draw();
 
   
-  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/Bmass/"+label+"sPlot.gif");
+  cdata->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/Bmass/"+label+"sPlot.gif");
 
-  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/Bmass/"+label+"sPlot.pdf");
+  cdata->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/Bmass/"+label+"sPlot.pdf");
 
 
   TH1D* histo_Bp_sig = (TH1D*)dataWBp->createHistogram(label,nob,0,0);
@@ -533,9 +533,9 @@ TH1D* MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_sig->SetStats(0);
   histo_Bp_sig->Draw("E");
 
-  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.gif");
-  // prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.pdl"); 
-  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.pdf");
+  prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.gif");
+  // prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.pdl"); 
+  prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig/"+label+"sPlot.pdf");
 
   TCanvas* prov_bkg = new TCanvas ("prov_bkg","c2",200,10,700,500);
   prov_bkg->cd();
@@ -550,8 +550,8 @@ TH1D* MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_bkg->SetStats(0);
   histo_Bp_bkg->Draw("E");
 
-  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/bkg/"+label+"sPlot.gif");
-  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/bkg/"+label+"sPlot.pdf");
+  prov_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/bkg/"+label+"sPlot.gif");
+  prov_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/bkg/"+label+"sPlot.pdf");
 
 
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500); 
@@ -565,8 +565,8 @@ TH1D* MakePlots(RooWorkspace& ws, int nob, TString label){
    legend->AddEntry(histo_Bp_bkg,"Background","lep");
    legend->Draw();
 
-  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig_bkg/"+label+"sPlot.gif");
-  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig_bkg/"+label+"sPlot.pdf");
+  sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig_bkg/"+label+"sPlot.gif");
+  sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/splot/sig_bkg/"+label+"sPlot.pdf");
 
   //cleanup
   delete cdata;

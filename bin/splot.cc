@@ -54,7 +54,7 @@ int main(){
   //CANAL-NÃO VAMOS UTILIZAR NO NOSSO CASO, POIS ESTAMOS A FAZER APENAS PARA O B+//
   int n_bins[n_var]= {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10};
   TString variables [n_var] = {"Bpt","By","Btrk1D0Err","Bmu1pt","Bmu1eta","Btrk1pt","Btrk1eta","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1D0","Btrk1Dz","Bd0","Blxy","Bd0err"};
-  TString input_file_Bp = "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_data_ntKp_PbPb_2018.root"; //input
+  TString input_file_Bp = "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees/selected_data_ntKp_PbPb_2018.root"; //input
 
   //CICLO FOR
   for(int i = 0;i<n_var;i++)   { //percorro as variáveis (16)
@@ -190,8 +190,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   cdata->cd(3);  ptframe2Bp->Draw();
   cdata->cd(4);  ptframe2Bg->Draw();
 
-  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_Bmass_"+label+".gif");
-  cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_Bmass_"+label+".pdf");
+  cdata->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_Bmass_"+label+".gif");
+  cdata->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_Bmass_"+label+".pdf");
 
 
   TH1D* histo_Bp_sig = (TH1D*)dataWBp->createHistogram(label,nob,0,0);
@@ -223,8 +223,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_sig->SetStats(0);
   histo_Bp_sig->Draw("E");
 
-  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".gif");
-  prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".pdl");
+  prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".gif");
+  prov->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".pdl");
 
   TCanvas* prov_bkg = new TCanvas ("prov_bkg","c2",200,10,700,500);
   prov_bkg->cd();
@@ -239,8 +239,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
   histo_Bp_bkg->SetStats(0);
   histo_Bp_bkg->Draw("E");
 
-  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".gif");
-  prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".pdf");
+  prov_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".gif");
+  prov_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_Bplus_"+label+".pdf");
 
 
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500);
@@ -254,8 +254,8 @@ void MakePlots(RooWorkspace& ws, int nob, TString label){
    legend->AddEntry(histo_Bp_bkg,"Background","lep");
    legend->Draw();
 
-  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_SigBkg_"+label+".gif");
-  sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_SigBkg_"+label+".pdf");
+  sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_SigBkg_"+label+".gif");
+  sig_bkg->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/teste/sPlot_SigBkg_"+label+".pdf");
 
   //cleanup
   delete cdata;
