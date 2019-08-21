@@ -85,7 +85,7 @@ int main(){
   std::vector<TH1D*> histos_mc;
   std::vector<TH1D*> histos_splot;
 
-  int n_bins[] = {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+  int n_bins[]= {20, 20, 10, 10, 10, 10, 10, 10, 10, 10, 35, 10, 70, 10, 10, 10, 10, 10,10,10,10};
   TString variables[] = {"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "BsvpvDistance", "BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX", "BvtxY", "Btrk1DzError1", "Btrk1Dxy1", "Btrk1DxyError1", "Bd0","Bd0err"};
 
   int n_n_bins = sizeof(n_bins)/sizeof(n_bins[0]);
@@ -919,8 +919,7 @@ void set_up_workspace_variables(RooWorkspace& w)
   double Btrk1DxyErr1Min, Btrk1DxyErr1Max;
   double d0_min, d0_max;
   double d0Err_min, d0Err_max;
-
-  /*
+  
   mass_min=5.;
   mass_max=6.;
 
@@ -930,129 +929,63 @@ void set_up_workspace_variables(RooWorkspace& w)
   y_min=-2.4;
   y_max=2.4;
 
-  trk1eta_min=-3.;
-  trk1eta_max=3.;
+  trk1eta_min=-2.5;
+  trk1eta_max=2.5;
 
-  Btrk1YMin = -3;
-  Btrk1YMax = 3;
+  Btrk1YMin = -2.5;
+  Btrk1YMax = 2.5;
 
   trk1pt_min=0.;
-  trk1pt_max=8.;
+  trk1pt_max=25.;
 
-  mu1eta_min=-2.;
-  mu1eta_max=2.;
+  mu1eta_min=-2.5;
+  mu1eta_max=2.5;
 
-  Bmu2EtaMin = -2;
-  Bmu2EtaMax = 2;
+  Bmu2EtaMin = -2.6;
+  Bmu2EtaMax = 2.6;
 
   mu1pt_min=0.;
-  mu1pt_max=20.;
+  mu1pt_max=52.;
 
-  Bmu2PtMin = 0;
-  Bmu2PtMax = 20;
+  Bmu2PtMin = 0.;
+  Bmu2PtMax = 54.;
 
   chi2cl_min = 0.;
-  chi2cl_max = 1.;
+  chi2cl_max = 1.05;
 
   svpvDistance_min=0.;
-  svpvDistance_max=2.;
+  svpvDistance_max=9.5;
 
   svpvDistanceErr_min=0.;
-  svpvDistanceErr_max=0.05;
+  svpvDistanceErr_max=0.08;
 
   alpha_min=0.;
   alpha_max=0.1;
 
-  trk1Dz_min=-0.1;
-  trk1Dz_max=0.1;
+  trk1Dz_min=-9;
+  trk1Dz_max=5.;
 
-  BvtxXMin = -0.5;
-  BvtxXMax = 0.5;
+  BvtxXMin = -0.85;
+  BvtxXMax = 0.8;
 
-  BvtxYMin = -0.5;
-  BvtxYMax = 0.5;
-
-  Btrk1DzError1Min = 0;
-  Btrk1DzError1Max = 0.02;
-
-  Btrk1Dxy1Min = -0.3;
-  Btrk1Dxy1Max = 0.3;
-
-  Btrk1DxyErr1Min = 0;
-  Btrk1DxyErr1Max = 0.010;
-
-  d0_min=0.;
-  d0_max=0.4;
-
-  d0Err_min=0.;
-  d0Err_max=0.0001;
-  */
-
-  mass_min=5.;
-  mass_max=6.;
-
-  pt_min=5.;
-  pt_max=100.;
-
-  y_min=-2.4;
-  y_max=2.4;
-
-  trk1eta_min=-3.;
-  trk1eta_max=3.;
-
-  Btrk1YMin = -3;
-  Btrk1YMax = 3;
-
-  trk1pt_min=0.;
-  trk1pt_max=45.;
-
-  mu1eta_min=-3.;
-  mu1eta_max=3.;
-
-  Bmu2EtaMin = -3;
-  Bmu2EtaMax = 3;
-
-  mu1pt_min=0.;
-  mu1pt_max=80.;
-
-  Bmu2PtMin = 0;
-  Bmu2PtMax = 80;
-
-  chi2cl_min = 0.;
-  chi2cl_max = 1.;
-
-  svpvDistance_min=0.;
-  svpvDistance_max=14.;
-
-  svpvDistanceErr_min=0.;
-  svpvDistanceErr_max=0.1;
-
-  alpha_min=0.;
-  alpha_max=3;
-
-  trk1Dz_min=-10;
-  trk1Dz_max=15;
-
-  BvtxXMin = -2;
-  BvtxXMax = 2;
-
-  BvtxYMin = -2;
-  BvtxYMax = 2;
+  BvtxYMin = -0.9;
+  BvtxYMax = 0.9;
 
   Btrk1DzError1Min = 0;
-  Btrk1DzError1Max = 6;
+  Btrk1DzError1Max = 1.5;
 
-  Btrk1Dxy1Min = -1;
-  Btrk1Dxy1Max = 1;
+  Btrk1Dxy1Min = -0.45;
+  Btrk1Dxy1Max = 0.35;
 
   Btrk1DxyErr1Min = 0;
-  Btrk1DxyErr1Max = 0.4;
+  Btrk1DxyErr1Max = 0.2;
 
   d0_min=0.;
-  d0_max=3;
+  d0_max=0.9;
 
   d0Err_min=0.;
-  d0Err_max=0.7;
+  d0Err_max=0.00033;
+  
  
   RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
   RooRealVar Bpt("Bpt","Bpt",pt_min,pt_max);
