@@ -56,8 +56,8 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n);
 std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label);
 
 void set_up_workspace_variables(RooWorkspace& w);
-TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n); //mc
-TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n); //data
+TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n); 
+TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n); 
 void read_data(RooWorkspace& w, TString f_input);
 void build_pdf (RooWorkspace& w);
 void plot_complete_fit(RooWorkspace& w);
@@ -73,9 +73,9 @@ int main(){
   std::vector<TH1D*> histos_mc;
   std::vector<TH1D*> histos_splot;
 
-  //const int n_var = 23;
+  //const int n_var = 21;
 
-  int n_bins[]= {10, 20, 10, 10, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10,10,10,10};
+  int n_bins[]= {20, 20, 10, 10, 10, 10, 10, 10, 10, 10, 35, 10, 70, 10, 10, 10, 10, 10,10,10,10};
   TString variables[]={"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX","BvtxY","Btrk1DzError1","Btrk1Dxy1","Btrk1DxyError1","Bd0","Bd0err"};
   
   RooWorkspace* ws = new RooWorkspace("ws");
@@ -88,6 +88,7 @@ int main(){
   //sideband_sub histograms
   histos_data = sideband_subtraction(ws, n_bins);
 
+  //mc histograms
   TFile *fin_mc = new TFile(input_file_mc);
   TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
 
@@ -105,7 +106,7 @@ int main(){
   do_splot(*ws);
   histos_splot = splot_method(*ws,n_bins,variables);
 
-  //COMPARISONS//
+  //COMPARISONS//->descomentar as escalas depois
   
   //sideband subtraction method vs. monte carlo
   for(int i=0; i<(int)histos_data.size(); i++)
@@ -119,7 +120,8 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_data[i]->Draw("same");
 
@@ -162,7 +164,8 @@ int main(){
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
       histos_data[i]->Draw("same");
@@ -197,7 +200,8 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -240,7 +244,8 @@ int main(){
       histos_data[i]->Scale(1/histos_data[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_data[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -1000,62 +1005,63 @@ void set_up_workspace_variables(RooWorkspace& w)
   y_min=-2.4;
   y_max=2.4;
 
-  trk1eta_min=-3.;
-  trk1eta_max=3.;
+  trk1eta_min=-2.5;
+  trk1eta_max=2.5;
 
-  Btrk1YMin = -3;
-  Btrk1YMax = 3;
+  Btrk1YMin = -2.5;
+  Btrk1YMax = 2.5;
 
   trk1pt_min=0.;
-  trk1pt_max=45.;
+  trk1pt_max=25.;
 
-  mu1eta_min=-3.;
-  mu1eta_max=3.;
+  mu1eta_min=-2.5;
+  mu1eta_max=2.5;
 
-  Bmu2EtaMin = -3;
-  Bmu2EtaMax = 3;
+  Bmu2EtaMin = -2.6;
+  Bmu2EtaMax = 2.6;
 
   mu1pt_min=0.;
-  mu1pt_max=80.;
+  mu1pt_max=52.;
 
-  Bmu2PtMin = 0;
-  Bmu2PtMax = 80;
+  Bmu2PtMin = 0.;
+  Bmu2PtMax = 54.;
 
   chi2cl_min = 0.;
-  chi2cl_max = 1.;
+  chi2cl_max = 1.05;
 
   svpvDistance_min=0.;
-  svpvDistance_max=14.;
+  svpvDistance_max=9.5;
 
   svpvDistanceErr_min=0.;
-  svpvDistanceErr_max=0.1;
+  svpvDistanceErr_max=0.08;
 
   alpha_min=0.;
-  alpha_max=3;
+  alpha_max=3.2;
 
-  trk1Dz_min=-10;
-  trk1Dz_max=15;
+  trk1Dz_min=-9;
+  trk1Dz_max=5.;
 
-  BvtxXMin = -2;
-  BvtxXMax = 2;
+  BvtxXMin = -0.85;
+  BvtxXMax = 0.8;
 
-  BvtxYMin = -2;
-  BvtxYMax = 2;
+  BvtxYMin = -0.9;
+  BvtxYMax = 0.9;
 
   Btrk1DzError1Min = 0;
-  Btrk1DzError1Max = 6;
+  Btrk1DzError1Max = 1.5;
 
-  Btrk1Dxy1Min = -1;
-  Btrk1Dxy1Max = 1;
+  Btrk1Dxy1Min = -0.45;
+  Btrk1Dxy1Max = 0.35;
 
   Btrk1DxyErr1Min = 0;
-  Btrk1DxyErr1Max = 0.4;
+  Btrk1DxyErr1Max = 0.2;
 
   d0_min=0.;
-  d0_max=3;
+  d0_max=0.9;
 
   d0Err_min=0.;
-  d0Err_max=0.7;
+  d0Err_max=0.00033;
+
  
   RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
   RooRealVar Bpt("Bpt","Bpt",pt_min,pt_max);
