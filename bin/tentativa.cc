@@ -52,8 +52,8 @@ using namespace RooStats;
 using namespace RooFit;
 using namespace std;
 
-std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n);
-std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label);
+std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var);
+std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label, int n_var);
 
 void set_up_workspace_variables(RooWorkspace& w);
 TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n); //mc
@@ -66,26 +66,47 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label);
 
 int main(){
 
+  int particle;
+  particle = 0; //B+;
+  //particle = 1; //Bs;
+
+  int n_var;
+
   TString input_file_data = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_ntKp_PbPb_2018_corrected_test.root";
   TString input_file_mc = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
+
+  if(particle == 0){
+    input_file_data = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_ntKp_PbPb_2018_corrected_test.root";
+    input_file_mc = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
+  }//else if(particle == 1){
+  //put Bs input files here
+  // }
 
   std::vector<TH1D*> histos_data;
   std::vector<TH1D*> histos_mc;
   std::vector<TH1D*> histos_splot;
 
-  //const int n_var = 21;
-  int n_bins[]= {10, 20, 10, 10, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10,10,10,10};
-  TString variables[]={"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX","BvtxY","Btrk1DzError1","Btrk1Dxy1","Btrk1DxyError1","Bd0","Bd0err"};
+  int n_bins[] = {10, 20, 10, 10, 10, 10, 10, 10, 15, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+  TString variables[] = {"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "BsvpvDistance", "BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX", "BvtxY", "Btrk1DzError1", "Btrk1Dxy1", "Btrk1DxyError1", "Bd0","Bd0err"};
+
+  int n_n_bins = sizeof(n_bins)/sizeof(n_bins[0]);
+  int n_variables = sizeof(variables)/sizeof(variables[0]);
+
+  if(n_n_bins != n_variables){
+    std::cout << "Error: number of bins does not correspond to number of variables." << std::endl;
+    return 0;
+  }
+
+  n_var = n_variables;
   
   RooWorkspace* ws = new RooWorkspace("ws");
-
   set_up_workspace_variables(*ws);
   read_data(*ws,input_file_data);
   build_pdf(*ws);
-  plot_complete_fit(*ws);
- 
+  plot_complete_fit(*ws);  
+
   //sideband_sub histograms
-  histos_data = sideband_subtraction(ws, n_bins);
+  histos_data = sideband_subtraction(ws, n_bins, n_var);
 
   TFile *fin_mc = new TFile(input_file_mc);
   TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
@@ -102,7 +123,7 @@ int main(){
 
   //splot histograms
   do_splot(*ws);
-  histos_splot = splot_method(*ws,n_bins,variables);
+  histos_splot = splot_method(*ws,n_bins,variables, n_var);
   
   //sideband subtraction method vs. monte carlo
   for(int i=0; i<(int)histos_data.size(); i++)
@@ -232,8 +253,8 @@ int main(){
 void read_data(RooWorkspace& w, TString f_input){
 
   TFile* fin_data = new TFile(f_input);
-  TNtupleD* _nt = (TNtupleD*)fin_data->Get("ntKp");
-  //TTree* t1_data = (TTree*)fin_data->Get("ntKp");
+  //TNtupleD* _nt = (TNtupleD*)fin_data->Get("ntKp");
+  TTree* t1_data = (TTree*)fin_data->Get("ntKp");
  
   RooArgList arg_list ("arg_list");
 
@@ -260,9 +281,11 @@ void read_data(RooWorkspace& w, TString f_input){
   arg_list.add(*(w.var("Bd0")));
   arg_list.add(*(w.var("Bd0err")));
 
-  RooDataSet* data = new RooDataSet("data","data",_nt,arg_list);
+  RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
 
   w.import(*data, Rename("data"));
+
+
  
 }
 
@@ -444,7 +467,6 @@ void plot_complete_fit(RooWorkspace& w){
   leg->AddEntry(massframe->findObject("B->J/psi pi"), "B->J/psi pi", "l");
   leg->AddEntry(massframe->findObject("Fit"),"Fit","l");
   leg->Draw("same");
-
   
   //pull dists
 
@@ -482,7 +504,7 @@ void plot_complete_fit(RooWorkspace& w){
 }
 
 //SIDEBAND SUBTRACTION//
-std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n){
+std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var){
   
   RooDataSet* data = (RooDataSet*) w->data("data");
 
@@ -531,7 +553,7 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n){
   double factor = (int_fit_peak->getVal())/(int_fit_side_right->getVal());
 
   std::cout << std::endl << "Factor: " << factor << std::endl;
-  for(int i=0; i<21; i++){
+  for(int i=0; i<n_var; i++){
     std::cout << "bins: " << n[i] << std::endl;
   } 
 
@@ -857,11 +879,11 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 //make_splot ends
 
 //SPLOT_METHOD//
-std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label){
+std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label, int n_var){
 
   std::vector<TH1D*> histos;
 
-  for(int i = 0;i<21;i++){
+  for(int i = 0;i<n_var;i++){
     histos.push_back(make_splot(w,n[i],label[i]));
   }
 
@@ -964,8 +986,8 @@ void set_up_workspace_variables(RooWorkspace& w)
   mass_min=5.;
   mass_max=6.;
 
-  pt_min=0.;
-  pt_max=90.;
+  pt_min=5.;
+  pt_max=100.;
 
   y_min=-2.4;
   y_max=2.4;
