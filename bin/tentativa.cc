@@ -52,25 +52,24 @@ using namespace RooStats;
 using namespace RooFit;
 using namespace std;
 
-std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var);
+std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var, int particle);
 std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label, int n_var);
 
 void set_up_workspace_variables(RooWorkspace& w);
 TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n); //mc
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n); //data
-void read_data(RooWorkspace& w, TString f_input);
-void build_pdf (RooWorkspace& w);
+void read_data(RooWorkspace& w, TString f_input, int particle);
+void build_pdf (RooWorkspace& w, int particle);
 void plot_complete_fit(RooWorkspace& w);
 void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 
+
 int main(){
 
-  int particle;
-  particle = 0; //B+;
-  //particle = 1; //Bs;
-
   int n_var;
+
+  int particle = 0; //0 for B+, 1 for Bs
 
   TString input_file_data = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_ntKp_PbPb_2018_corrected_test.root";
   TString input_file_mc = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
@@ -101,12 +100,12 @@ int main(){
   
   RooWorkspace* ws = new RooWorkspace("ws");
   set_up_workspace_variables(*ws);
-  read_data(*ws,input_file_data);
-  build_pdf(*ws);
+  read_data(*ws,input_file_data, particle);
+  build_pdf(*ws, particle);
   plot_complete_fit(*ws);  
 
   //sideband_sub histograms
-  histos_data = sideband_subtraction(ws, n_bins, n_var);
+  histos_data = sideband_subtraction(ws, n_bins, n_var, particle);
 
   TFile *fin_mc = new TFile(input_file_mc);
   TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
@@ -250,7 +249,7 @@ int main(){
 }
 
 
-void read_data(RooWorkspace& w, TString f_input){
+void read_data(RooWorkspace& w, TString f_input, int particle){
 
   TFile* fin_data = new TFile(f_input);
   //TNtupleD* _nt = (TNtupleD*)fin_data->Get("ntKp");
@@ -258,39 +257,40 @@ void read_data(RooWorkspace& w, TString f_input){
  
   RooArgList arg_list ("arg_list");
 
-  arg_list.add(*(w.var("Bmass")));
-  arg_list.add(*(w.var("Bpt")));
-  arg_list.add(*(w.var("By")));
-  arg_list.add(*(w.var("Btrk1eta")));
-  arg_list.add(*(w.var("Btrk1Y")));
-  arg_list.add(*(w.var("Btrk1pt")));
-  arg_list.add(*(w.var("Bmu1eta")));
-  arg_list.add(*(w.var("Bmu2eta")));
-  arg_list.add(*(w.var("Bmu1pt")));
-  arg_list.add(*(w.var("Bmu2pt")));
-  arg_list.add(*(w.var("Bchi2cl")));
-  arg_list.add(*(w.var("BsvpvDistance")));
-  arg_list.add(*(w.var("BsvpvDistance_Err")));
-  arg_list.add(*(w.var("Balpha")));
-  arg_list.add(*(w.var("Btrk1Dz1")));
-  arg_list.add(*(w.var("BvtxX")));
-  arg_list.add(*(w.var("BvtxY")));
-  arg_list.add(*(w.var("Btrk1DzError1")));
-  arg_list.add(*(w.var("Btrk1Dxy1")));
-  arg_list.add(*(w.var("Btrk1DxyError1")));
-  arg_list.add(*(w.var("Bd0")));
-  arg_list.add(*(w.var("Bd0err")));
+  if(particle == 0){
+    arg_list.add(*(w.var("Bmass")));
+    arg_list.add(*(w.var("Bpt")));
+    arg_list.add(*(w.var("By")));
+    arg_list.add(*(w.var("Btrk1eta")));
+    arg_list.add(*(w.var("Btrk1Y")));
+    arg_list.add(*(w.var("Btrk1pt")));
+    arg_list.add(*(w.var("Bmu1eta")));
+    arg_list.add(*(w.var("Bmu2eta")));
+    arg_list.add(*(w.var("Bmu1pt")));
+    arg_list.add(*(w.var("Bmu2pt")));
+    arg_list.add(*(w.var("Bchi2cl")));
+    arg_list.add(*(w.var("BsvpvDistance")));
+    arg_list.add(*(w.var("BsvpvDistance_Err")));
+    arg_list.add(*(w.var("Balpha")));
+    arg_list.add(*(w.var("Btrk1Dz1")));
+    arg_list.add(*(w.var("BvtxX")));
+    arg_list.add(*(w.var("BvtxY")));
+    arg_list.add(*(w.var("Btrk1DzError1")));
+    arg_list.add(*(w.var("Btrk1Dxy1")));
+    arg_list.add(*(w.var("Btrk1DxyError1")));
+    arg_list.add(*(w.var("Bd0")));
+    arg_list.add(*(w.var("Bd0err")));
+  } /*else if(particle == 1){
+      //Insert Bs arg_list
+      }*/
 
   RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
 
   w.import(*data, Rename("data"));
-
-
- 
 }
 
 
-void build_pdf(RooWorkspace& w) {
+void build_pdf(RooWorkspace& w, int particle) {
 
   RooRealVar Bmass = *(w.var("Bmass"));
   RooDataSet* data = (RooDataSet*) w.data("data");
@@ -376,11 +376,16 @@ void build_pdf(RooWorkspace& w) {
   f_jpsipi.setConstant(kTRUE);
   RooProduct n_jpsipi("n_jpsipi","n_jpsipi",RooArgList(n_signal,f_jpsipi));
 
-  RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
-
-  model.fitTo(*data,Range("all"));
- 
-  w.import(model);
+  if(particle == 0){
+    RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
+    model.fitTo(*data,Range("all"));
+    w.import(model);
+  } /* else if(particle == 1){
+       Insert Bs model
+       model.fitTo(*data,Range("all"));
+       w.import(model);
+    {*/
+  
   w.import(fit_side);
   w.import(signal);
 
@@ -504,7 +509,7 @@ void plot_complete_fit(RooWorkspace& w){
 }
 
 //SIDEBAND SUBTRACTION//
-std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var){
+std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var, int particle){
   
   RooDataSet* data = (RooDataSet*) w->data("data");
 
