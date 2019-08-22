@@ -75,7 +75,7 @@ int main(){
 
   //const int n_var = 21;
 
-  int n_bins[]= {20, 20, 10, 10, 10, 10, 10, 10, 10, 10, 35, 10, 70, 10, 10, 10, 10, 10,10,10,10};
+  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 15, 20, 10, 15, 15, 10, 15, 15, 15, 15, 15,15,15,15};
   TString variables[]={"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX","BvtxY","Btrk1DzError1","Btrk1Dxy1","Btrk1DxyError1","Bd0","Bd0err"};
   
   RooWorkspace* ws = new RooWorkspace("ws");
@@ -798,7 +798,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   data->plotOn(mframe);
   model->plotOn(mframe,LineColor(kRed));
   model->plotOn(mframe,Components(*BpModel),LineStyle(kDashed),LineColor(kOrange));
-  model->plotOn(mframe,Components(*BgModel),LineStyle(kDashed),LineColor(kGreen+3));
+  model->plotOn(mframe,Components(*BgModel),LineStyle(kDashed),LineColor(kBlue));
   mframe->SetTitle("Bmass");
   mframe->Draw();
 
@@ -889,13 +889,19 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500); 
   sig_bkg->cd();
 
+  //normalization
+  histo_Bp_bkg->Scale(1/histo_Bp_bkg->Integral());
+  histo_Bp_sig->Scale(1/histo_Bp_sig->Integral());
+
   histo_Bp_sig->Draw();
-  histo_Bp_bkg->Draw("SAME");
+  histo_Bp_bkg->Draw("same");
+
+  histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 1.7*histo_Bp_bkg->GetMaximum());
 
   TLegend* legend = new TLegend(0.7,0.9,0.9,0.8);
-   legend->AddEntry(histo_Bp_sig,"Signal","lep");
-   legend->AddEntry(histo_Bp_bkg,"Background","lep");
-   legend->Draw();
+  legend->AddEntry(histo_Bp_sig,"Signal","lep");
+  legend->AddEntry(histo_Bp_bkg,"Background","lep");
+  legend->Draw();
 
   sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/splot/sig_bkg/"+label+"sPlot.gif");
   sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/splot/sig_bkg/"+label+"sPlot.pdf");
@@ -1012,7 +1018,8 @@ void set_up_workspace_variables(RooWorkspace& w)
   Btrk1YMax = 2.5;
 
   trk1pt_min=0.;
-  trk1pt_max=25.;
+  //trk1pt_max=31.;
+  trk1pt_max=16.5;
 
   mu1eta_min=-2.5;
   mu1eta_max=2.5;
@@ -1021,7 +1028,8 @@ void set_up_workspace_variables(RooWorkspace& w)
   Bmu2EtaMax = 2.6;
 
   mu1pt_min=0.;
-  mu1pt_max=52.;
+  //mu1pt_max=82.;
+  mu1pt_max=38.;
 
   Bmu2PtMin = 0.;
   Bmu2PtMax = 54.;
@@ -1030,37 +1038,50 @@ void set_up_workspace_variables(RooWorkspace& w)
   chi2cl_max = 1.05;
 
   svpvDistance_min=0.;
-  svpvDistance_max=9.5;
+  //svpvDistance_max=9.5;
+  svpvDistance_max=8.5;
 
   svpvDistanceErr_min=0.;
-  svpvDistanceErr_max=0.08;
+  //svpvDistanceErr_max=0.08;
+  svpvDistanceErr_max=0.064;
 
   alpha_min=0.;
-  alpha_max=3.2;
+  // alpha_max=3.2;
+  alpha_max = 0.35;
 
-  trk1Dz_min=-9;
-  trk1Dz_max=5.;
+  //trk1Dz_min=-10;
+  //trk1Dz_max=3.;
+  trk1Dz_min=-1.;
+  trk1Dz_max=2.;
 
-  BvtxXMin = -0.85;
-  BvtxXMax = 0.8;
+  //BvtxXMin = -0.85; //-0.6
+  // BvtxXMax = 0.8; //0.6
+  BvtxXMin = -0.6;
+  BvtxXMax = 0.6;
 
   BvtxYMin = -0.9;
   BvtxYMax = 0.9;
 
   Btrk1DzError1Min = 0;
-  Btrk1DzError1Max = 1.5;
+  //Btrk1DzError1Max = 1.5;
+  Btrk1DzError1Max = 0.5;
 
-  Btrk1Dxy1Min = -0.45;
-  Btrk1Dxy1Max = 0.35;
+  //Btrk1Dxy1Min = -0.45;
+  //Btrk1Dxy1Max = 0.6;
+  Btrk1Dxy1Min = -0.3;
+  Btrk1Dxy1Max = 0.3;
 
   Btrk1DxyErr1Min = 0;
-  Btrk1DxyErr1Max = 0.2;
+  //Btrk1DxyErr1Max = 0.22;
+  Btrk1DxyErr1Max = 0.08;
 
   d0_min=0.;
-  d0_max=0.9;
+  //d0_max=0.95;
+  d0_max=0.75;
 
   d0Err_min=0.;
-  d0Err_max=0.00033;
+  // d0Err_max=0.00042;
+  d0Err_max=0.00029;
 
  
   RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
