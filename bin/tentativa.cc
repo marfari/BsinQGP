@@ -281,6 +281,25 @@ int main(){
       histos_mc[i]->Delete();
       histos_data[i]->Delete();
       histos_splot[i]->Delete();
+
+      //PARA GRAVAR:
+      //TFile* f = new TFile("tfile.root", "recreate"); 
+
+      // TH1F* h = new TH1F("h","h",10,0,10);
+      //for(int i=0;i<10;i++)
+      // h->SetBinContent(i,i);
+
+      // TCanvas c;
+      // h->Draw();
+      //c.SaveAs("hist.pdf");
+
+      //f->cd();
+      // h->Write("my_file");
+      // f->Write();
+
+      //f->ls();
+
+      //f->Close();
   
     }   
   
