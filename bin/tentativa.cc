@@ -78,8 +78,8 @@ int main(){
   TString input_file_mc = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
 
   std::vector<TH1D*> histos_data;
-  std::vector<TH1D*> histos_splot;
   std::vector<TH1D*> histos_mc;
+  std::vector<TH1D*> histos_splot;
 
   //const int n_var = 21;
 
@@ -96,10 +96,6 @@ int main(){
   //sideband_sub histograms
   histos_data = sideband_subtraction(ws, n_bins);
 
-  //splot histograms
-  do_splot(*ws);
-  histos_splot = splot_method(*ws,n_bins,variables);
-
   //mc histograms
   TFile *fin_mc = new TFile(input_file_mc);
   TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
@@ -110,6 +106,10 @@ int main(){
     histos_mc.push_back(create_histogram_mc((*ws->var(histos_data[i]->GetName())), t1_mc, n_bins[i]));
     names.push_back(TString(histos_data[i]->GetName()));
   }
+
+  //splot histograms
+  do_splot(*ws);
+  histos_splot = splot_method(*ws,n_bins,variables);
 
 
 
