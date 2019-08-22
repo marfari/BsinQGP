@@ -1053,15 +1053,15 @@ void set_up_workspace_variables(RooWorkspace& w)
 
   alpha_min=0.;
   // alpha_max=3.2;
-  alpha_max = 0.35;
+  alpha_max = 0.1;
 
   //trk1Dz_min=-10;
   //trk1Dz_max=3.;
   trk1Dz_min=-1.;
   trk1Dz_max=2.;
 
-  //BvtxXMin = -0.85; //-0.6
-  // BvtxXMax = 0.8; //0.6
+  //BvtxXMin = -0.85;
+  // BvtxXMax = 0.8; 
   BvtxXMin = -0.6;
   BvtxXMax = 0.6;
 
