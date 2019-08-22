@@ -106,7 +106,7 @@ int main(){
   do_splot(*ws);
   histos_splot = splot_method(*ws,n_bins,variables);
 
-  //COMPARISONS//->descomentar as escalas depois
+  //COMPARISONS//
   
   //sideband subtraction method vs. monte carlo
   for(int i=0; i<(int)histos_data.size(); i++)
@@ -120,8 +120,8 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      // histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_data[i]->Draw("same");
 
@@ -164,8 +164,8 @@ int main(){
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
       histos_data[i]->Draw("same");
@@ -200,8 +200,8 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -244,8 +244,8 @@ int main(){
       histos_data[i]->Scale(1/histos_data[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      // histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_data[i]->Draw();
       histos_splot[i]->Draw("same");
 
@@ -896,7 +896,13 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   histo_Bp_sig->Draw();
   histo_Bp_bkg->Draw("same");
 
-  histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 2.15*histo_Bp_bkg->GetMaximum());
+  //DÁ?
+  if (histo_Bp_bkg->GetMaximum() > histo_Bp_sig->GetMaximum()){
+    histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 1.1*histo_Bp_bkg->GetMaximum());
+}
+  else {
+    histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 1.1*histo_Bp_sig->GetMaximum());
+  }
 
   TLegend* legend = new TLegend(0.7,0.9,0.9,0.8);
   legend->AddEntry(histo_Bp_sig,"Signal","lep");
