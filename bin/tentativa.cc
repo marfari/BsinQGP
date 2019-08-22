@@ -896,7 +896,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   histo_Bp_sig->Draw();
   histo_Bp_bkg->Draw("same");
 
-  histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 1.7*histo_Bp_bkg->GetMaximum());
+  histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 2.15*histo_Bp_bkg->GetMaximum());
 
   TLegend* legend = new TLegend(0.7,0.9,0.9,0.8);
   legend->AddEntry(histo_Bp_sig,"Signal","lep");
