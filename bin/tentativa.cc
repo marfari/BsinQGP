@@ -322,6 +322,7 @@ void read_data(RooWorkspace& w, TString f_input){
   RooDataSet* data = new RooDataSet("data","data",_nt,arg_list);
 
   w.import(*data, Rename("data"));
+
  
 }
 //read_data ends
@@ -999,23 +1000,23 @@ void set_up_workspace_variables(RooWorkspace& w)
   mu1pt_max = DATA_CUT ? 38. : 82. ;
 
   Bmu2PtMin = 0.;
-  Bmu2PtMax = 54.;
+  Bmu2PtMax = 49.;
 
   chi2cl_min = 0.;
   chi2cl_max = 1.05;
 
   svpvDistance_min=0.;
-  svpvDistance_max = DATA_CUT ? 8.5 : 9.5 ;
+  svpvDistance_max = DATA_CUT ? 3.5 : 9.5 ;
 
 
   svpvDistanceErr_min=0.;
-  svpvDistanceErr_max = DATA_CUT ? 0.076 : 0.064 ;
+  svpvDistanceErr_max = DATA_CUT ? 0.05 : 0.064 ;
 
   alpha_min=0.;
   alpha_max = DATA_CUT ? 0.1 : 3.2 ;
 
   trk1Dz_min = DATA_CUT ? -1. : -10.;
-  trk1Dz_max = DATA_CUT ? 1.8 : 2.;
+  trk1Dz_max = DATA_CUT ? 0.7 : 2.;
 
   BvtxXMin = DATA_CUT ? -0.6 : -0.85;
   BvtxXMax = DATA_CUT ? 0.7 : 0.8;
@@ -1024,19 +1025,19 @@ void set_up_workspace_variables(RooWorkspace& w)
   BvtxYMax = 0.9;
 
   Btrk1DzError1Min = 0;
-  Btrk1DzError1Max = DATA_CUT ? 0.3 : 1.25;
+  Btrk1DzError1Max = DATA_CUT ? 0.14 : 1.25;
 
   Btrk1Dxy1Min = DATA_CUT ? -0.3 : -0.45;
   Btrk1Dxy1Max = DATA_CUT ? 0.3 : 0.6;
 
   Btrk1DxyErr1Min = 0;
-  Btrk1DxyErr1Max = DATA_CUT ? 0.08 : 0.22;
+  Btrk1DxyErr1Max = DATA_CUT ? 0.0125 : 0.22;
 
   d0_min=0.;
   d0_max = DATA_CUT ? 0.75 : 0.95;
 
   d0Err_min=0.;
-  d0Err_max = DATA_CUT ? 0.00029 : 0.00042;
+  d0Err_max = DATA_CUT ? 0.0002 : 0.00042;
 
  
   RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
