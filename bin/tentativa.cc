@@ -83,7 +83,7 @@ int main(){
 
   //const int n_var = 21;
 
-  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 15, 20, 10, 15, 15, 10, 15, 15, 15, 15, 15,15,15,15};
+  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15,15,15,15};
   TString variables[]={"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX","BvtxY","Btrk1DzError1","Btrk1Dxy1","Btrk1DxyError1","Bd0","Bd0err"};
   
   RooWorkspace* ws = new RooWorkspace("ws");
@@ -240,7 +240,6 @@ int main(){
 
   for(int i=0; i<(int)histos_data.size(); i++)
     {
-
 
       TCanvas a;
       histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
@@ -1037,7 +1036,7 @@ void set_up_workspace_variables(RooWorkspace& w)
   d0_max = DATA_CUT ? 0.75 : 0.95;
 
   d0Err_min=0.;
-  d0Err_max = DATA_CUT ? 0.0002 : 0.00042;
+  d0Err_max = DATA_CUT ? 0.00019 : 0.00042;
 
  
   RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
