@@ -164,7 +164,7 @@ int main(){
     c.Update();
     
     TLegend* leg;
-    leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+    leg = new TLegend(0.7, 0.85, 0.9, 0.95);
     leg->AddEntry(ss_comp_mc[i]->GetName(), "S. Subtraction", "l");
     leg->AddEntry(mc_comp_ss[i]->GetName(), "Monte Carlo", "l");
     leg->SetTextSize(0.03);
@@ -366,8 +366,15 @@ int main(){
       // histos_splot[i]->Draw("same");
       // histos_data[i]->Draw("same");
 
-
-      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
+      //y axis: maximum and minimum 
+  if (mc_comp[i]->GetMaximum() > sp_comp[i]->GetMaximum()){
+    mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*mc_comp[i]->GetMaximum());
+}
+  else {
+    mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*ss_comp[i]->GetMaximum());
+  }
+      
+  //mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
       mc_comp[i]->Draw();
       sp_comp[i]->Draw("same");
       ss_comp[i]->Draw("same");
@@ -804,6 +811,8 @@ TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n){
   h = (TH1D*)gDirectory->Get("htemp")->Clone();
   h->SetTitle("");
   h->SetMarkerColor(kGreen);
+  h->SetMarkerStyle(2);
+  h->SetMarkerSize(1);
   h->SetLineColor(kGreen);
   return h;
 }
@@ -1026,8 +1035,8 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   TCanvas* prov = new TCanvas ("prov","c1",200,10,700,500);
   prov->cd();
-  histo_Bp_sig->SetMarkerStyle(20);
-  histo_Bp_sig->SetMarkerSize(0.);
+  histo_Bp_sig->SetMarkerStyle(3);
+  histo_Bp_sig->SetMarkerSize(1);
   histo_Bp_sig->SetMarkerColor(kRed);
   histo_Bp_sig->SetLineColor(kRed);
   histo_Bp_sig->SetTitle("");
