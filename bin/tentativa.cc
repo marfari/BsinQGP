@@ -64,7 +64,6 @@ void plot_complete_fit(RooWorkspace& w);
 void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
-//  get_ratio(histos_splot, histos_mc,"weights.root");
 
 
 // DATA_CUT
@@ -87,7 +86,7 @@ int main(){
 
   const int n_var = 21;
 
-  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
+  int n_bins[]= {25, 29, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
   TString variables[]={"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX","BvtxY","Btrk1DzError1","Btrk1Dxy1","Btrk1DxyError1","Bd0","Bd0err"};
   
   RooWorkspace* ws = new RooWorkspace("ws");
@@ -96,11 +95,10 @@ int main(){
   read_data(*ws,input_file_data);
   build_pdf(*ws);
 
-  // 
-  //plot_complete_fit(*ws);
+  plot_complete_fit(*ws);
  
   //sideband_sub histograms
-  //  histos_data = sideband_subtraction(ws, n_bins);
+  histos_data = sideband_subtraction(ws, n_bins);
 
   //splot histograms
   do_splot(*ws);
@@ -117,7 +115,7 @@ int main(){
     names.push_back(TString(variables[i]));
   }
 
-
+  //get the ratio between the data (splot method) and the MC
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
 
@@ -125,25 +123,40 @@ int main(){
 
 
   //COMPARISONS//
+
     
   //sideband subtraction method vs. monte carlo
+
+  //clone
+  vector<TH1D*> mc_comp_ss(histos_mc);
+  //TH1 *mc_comp_ss = (TH1*)histos_mc->Clone("mc_comp_ss");
+  // TH1 *ss_comp_mc = (TH1*)histos_data->Clone("ss_comp_mc");
+  vector<TH1D*> ss_comp_mc(histos_data);
+
   for(int i=0; i<(int)histos_data.size(); i++) {
     TCanvas c;
-    histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
-    histos_mc[i]->SetStats(0);
-    histos_data[i]->SetStats(0);
+    // histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+    mc_comp_ss[i]->SetXTitle(TString(ss_comp_mc[i]->GetName()));
+    // histos_mc[i]->SetStats(0);
+    mc_comp_ss[i]->SetStats(0);
+    // histos_data[i]->SetStats(0);
+    ss_comp_mc[i]->SetStats(0);
     
     //normalization
-    histos_mc[i]->Scale(1/histos_mc[i]->Integral());
-    histos_data[i]->Scale(1/histos_data[i]->Integral());
+    // histos_mc[i]->Scale(1/histos_mc[i]->Integral());
+    //histos_data[i]->Scale(1/histos_data[i]->Integral());
+    mc_comp_ss[i]->Scale(1/mc_comp_ss[i]->Integral());
+    ss_comp_mc[i]->Scale(1/ss_comp_mc[i]->Integral());
+
       
-    histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-    histos_mc[i]->Draw();
-    histos_data[i]->Draw("same");
+    mc_comp_ss[i]->GetYaxis()->SetRangeUser(0.5*mc_comp_ss[i]->GetMinimum(),2*mc_comp_ss[i]->GetMaximum());
+    mc_comp_ss[i]->Draw();
+    ss_comp_mc[i]->Draw("same");
     
     //--TRATIOS--//
- 
-    auto rp = new TRatioPlot(histos_data[i], histos_mc[i], "divsym");
+
+    //auto rp = new TRatioPlot(histos_data[i] ,histos_mc[i], "divsym");
+    auto rp = new TRatioPlot(ss_comp_mc[i] ,mc_comp_ss[i], "divsym");
     c.SetTicks(0, 1);
     rp->SetH1DrawOpt("E");
     rp->Draw("nogrid");
@@ -154,8 +167,8 @@ int main(){
     TLegend* leg;
     
     leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-    leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
-    leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
+    leg->AddEntry(ss_comp_mc[i]->GetName(), "S. Subtraction", "l");
+    leg->AddEntry(mc_comp_ss[i]->GetName(), "Monte Carlo", "l");
     leg->SetTextSize(0.03);
     leg->Draw("same");
     
@@ -168,25 +181,42 @@ int main(){
 
   //SPlot vs sideband_subtraction
 
+  //clone
+  vector<TH1D*> sp_comp_ss(histos_splot);
+  // TH1D *sp_comp_ss = (TH1D*)histos_splot->Clone("sp_comp_ss");
+  //TH1D *ss_comp_sp = (TH1D*)histos_data->Clone("ss_comp_sp");
+  vector<TH1D*> ss_comp_sp(histos_data);
+
   for(int i=0; i<(int)histos_data.size(); i++)
     {
       TCanvas a;
-      histos_data[i]->SetYTitle("normalized entries");
-      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_data[i]->SetStats(0);
-      histos_splot[i]->SetStats(0);
+      // histos_data[i]->SetYTitle("normalized entries");
+      ss_comp_sp[i]->SetYTitle("normalized entries");
+      // histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      sp_comp_ss[i]->SetXTitle(TString(ss_comp_sp[i]->GetName()));
+      // histos_data[i]->SetStats(0);
+      ss_comp_sp[i]->SetStats(0);
+      // histos_splot[i]->SetStats(0);
+      sp_comp_ss[i]->SetStats(0);
 
       //normalization
-      // histos_data[i]->Scale(1/histos_data[i]->Integral());
-      histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+      //histos_data[i]->Scale(1/histos_data[i]->Integral());
+      ss_comp_sp[i]->Scale(1/ss_comp_sp[i]->Integral());
+      //histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+      sp_comp_ss[i]->Scale(1/sp_comp_ss[i]->Integral());
 
-      histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_data[i]->Draw();
-      histos_splot[i]->Draw("same");
+
+      // histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      ss_comp_sp[i]->GetYaxis()->SetRangeUser(0.5*ss_comp_sp[i]->GetMinimum(),2*ss_comp_sp[i]->GetMaximum());
+      // histos_data[i]->Draw();
+      ss_comp_sp[i]->Draw();
+      //histos_splot[i]->Draw("same");
+      sp_comp_ss[i]->Draw("same");
 
       //--TRATIOS--//
 
-      auto rp = new TRatioPlot(histos_data[i], histos_splot[i], "divsym");
+      // auto rp = new TRatioPlot(histos_data[i], histos_splot[i], "divsym");
+      auto rp = new TRatioPlot(ss_comp_sp[i], sp_comp_ss[i], "divsym");
       a.SetTicks(0, 1);
       rp->SetH1DrawOpt("E");
       rp->Draw("nogrid");
@@ -197,15 +227,15 @@ int main(){
       TLegend* leg;
 
       leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(histos_data[i]->GetName(), "Sideband Subtraction", "l");
-      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      // leg->AddEntry(histos_data[i]->GetName(), "Sideband Subtraction", "l");
+      leg->AddEntry(ss_comp_sp[i]->GetName(), "Sideband Subtraction", "l");
+      //leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      leg->AddEntry(sp_comp_ss[i]->GetName(), "SPlot", "l");
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
       a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+variables[i]+"_mc_validation.pdf");
       a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+variables[i]+"_mc_validation.gif");
-
-
       leg->Delete();
       
     }     
@@ -217,28 +247,42 @@ int main(){
   // TFile* f = new TFile("weights.root", "recreate");
   //TH1F* histos_w;
 
+  //clone
+  // TH1D *sp_comp_mc = (TH1D*)histos_splot->Clone("sp_comp_mc");
+  // TH1D *mc_comp_sp = (TH1D*)histos_mc->Clone("mc_comp_sp");
+
+  vector<TH1D*> sp_comp_mc(histos_splot);
+  vector<TH1D*> mc_comp_sp(histos_mc);
+
   for(int i=0; i<(int)histos_data.size(); i++)
     {
       TCanvas a;
-      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_mc[i]->SetYTitle("normalized entries");
-      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_mc[i]->SetStats(0);
-      histos_splot[i]->SetStats(0);
+      //histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      mc_comp_sp[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      // histos_mc[i]->SetYTitle("normalized entries");
+      mc_comp_sp[i]->SetYTitle("normalized entries");
+      // histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      sp_comp_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      //histos_mc[i]->SetStats(0);
+      mc_comp_sp[i]->SetStats(0);
+      //histos_splot[i]->SetStats(0);
+      sp_comp_mc[i]->SetStats(0);
 
       //normalization
       // histos_mc[i]->Scale(1/histos_mc[i]->Integral());
+      mc_comp_sp[i]->Scale(1/mc_comp_sp[i]->Integral());
       // histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+      sp_comp_mc[i]->Scale(1/sp_comp_mc[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->Draw();
-      histos_splot[i]->Draw("same");
+      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      mc_comp_sp[i]->GetYaxis()->SetRangeUser(0.5*mc_comp_sp[i]->GetMinimum(),2*mc_comp_sp[i]->GetMaximum());
+      mc_comp_sp[i]->Draw();
+      sp_comp_mc[i]->Draw("same");
 
       //--TRATIOS--//
       
-      auto rp = new TRatioPlot(histos_splot[i], histos_mc[i], "divsym");
-
-
+      //auto rp = new TRatioPlot(histos_splot[i], histos_mc[i], "divsym");
+      auto rp = new TRatioPlot(sp_comp_mc[i], mc_comp_sp[i], "divsym");
       a.SetTicks(0, 1);
       rp->SetH1DrawOpt("E");
       rp->Draw("nogrid");
@@ -249,8 +293,10 @@ int main(){
       TLegend* leg;
 
       leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
-      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      //leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
+      leg->AddEntry(mc_comp_sp[i]->GetName(), "Monte Carlo", "l");
+      //leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      leg->AddEntry(sp_comp_mc[i]->GetName(), "SPlot", "l");
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
@@ -281,32 +327,64 @@ int main(){
       //f->Close();
 
  //sideband subtraction method vs. monte carlo vs splot
+
+  //clone
+  // TH1D *sp_comp = (TH1D*)histos_splot->Clone("sp_comp");
+  //TH1D *mc_comp = (TH1D*)histos_mc->Clone("mc_comp");
+  //TH1D *ss_comp = (TH1D*)histos_data->Clone("ss_comp");
+
+  vector<TH1D*> sp_comp(histos_splot);
+  vector<TH1D*> mc_comp(histos_mc);
+  vector<TH1D*> ss_comp(histos_data);
+
   for(int i=0; i<(int)histos_data.size(); i++)
     {
       TCanvas a;
-      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_mc[i]->SetYTitle("normalized entries");
-      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_mc[i]->SetStats(0);
-      histos_splot[i]->SetStats(0);
-      histos_data[i]->SetStats(0);
+      //histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      //histos_mc[i]->SetYTitle("normalized entries");
+      //histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      //histos_mc[i]->SetStats(0);
+      // histos_splot[i]->SetStats(0);
+      // histos_data[i]->SetStats(0);
+
+      mc_comp[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      mc_comp[i]->SetYTitle("normalized entries");
+      sp_comp[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      mc_comp[i]->SetStats(0);
+      sp_comp[i]->SetStats(0);
+      ss_comp[i]->SetStats(0);
 
       //normalization
       // histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       // histos_splot[i]->Scale(1/histos_splot[i]->Integral());
       //histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->Draw();
-      histos_splot[i]->Draw("same");
-      histos_data[i]->Draw("same");
+      mc_comp[i]->Scale(1/mc_comp[i]->Integral());
+      sp_comp[i]->Scale(1/sp_comp[i]->Integral());
+      ss_comp[i]->Scale(1/ss_comp[i]->Integral());
+
+
+      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      // histos_mc[i]->Draw();
+      // histos_splot[i]->Draw("same");
+      // histos_data[i]->Draw("same");
+
+
+      mc_comp[i]->GetYaxis()->SetRangeUser(0.5*mc_comp[i]->GetMinimum(),2*mc_comp[i]->GetMaximum());
+      mc_comp[i]->Draw();
+      sp_comp[i]->Draw("same");
+      ss_comp[i]->Draw("same");
 	
       TLegend* leg;
 
       leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
-      leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
-      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      //leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
+      //leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
+      //leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+
+      leg->AddEntry(ss_comp[i]->GetName(), "S. Subtraction", "l");
+      leg->AddEntry(mc_comp[i]->GetName(), "Monte Carlo", "l");
+      leg->AddEntry(sp_comp[i]->GetName(), "SPlot", "l");
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
@@ -316,13 +394,12 @@ int main(){
 
     }
   
-       
-
 
   
 }
 //main function ends
 
+//get the ratio between the data (splot method) and the MC and save it in a root file
 void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TString> v_name, TString filename) {
 
   TString dir_name = "resultados/mc_validation_plots/weights/";
@@ -347,6 +424,7 @@ void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TSt
     h_aux->SetStats(0);
     h_aux->GetYaxis()->SetTitle("Data / MC");
 
+    //normalization
     h_aux->Scale(1/h_aux->Integral());
     mc[i]->Scale(1/mc[i]->Integral());
 
@@ -358,6 +436,7 @@ void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TSt
     TCanvas c;
     h_aux->Draw();
     c.SaveAs(dir_name+"/"+v_name.at(i) + "_weights.gif");
+    //output: a root file
   
   }
 
@@ -665,8 +744,11 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n){
   reduceddata_central = (RooDataSet*) data->reduce(Form("Bmass>%lf",left));
   reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf",right));
 
-  // do fitto background on sideband range
-  // tbd
+  Bmass.setRange("right",right,Bmass.getMax());
+  //fit the  background on sideband range:
+  fit_side->fitTo(*reduceddata_side,Range("right"));
+
+  
 
   //Integrating the background distribution
 
@@ -829,8 +911,6 @@ void do_splot(RooWorkspace& w){
   //sPlot class adds a new variable that has the name of the corresponding yield + "_sw".
    SPlot* sData = new SPlot("sData","An sPlot",*data, model, RooArgList(*BpYield,*BgYield));
 
-  //An SPlot gives us the distribution of some variable, x in our data sample for a given species (eg. signal or background). The result is similar to a likelihood projection plot, but no cuts are made, so every event contributes to the distribution.
-
 
   cout << endl <<  "Yield of B+ is "
        << BpYield->getVal() << ".  From sWeights it is "
@@ -841,22 +921,22 @@ void do_splot(RooWorkspace& w){
        << sData->GetYieldFromSWeight("n_combinatorial") << endl
        << endl;
 
-  for(Int_t i=0; i < 10; i++) {
-    if(0)
-      cout << "y Weight   "     << sData->GetSWeight(i,"BpYield")
-	   << "\tb Weight   "     << sData->GetSWeight(i,"BgYield")
-	   << "\ttotal Weight   " << sData->GetSumOfEventSWeight(i)
-	   << endl;
-  }
+  //for(Int_t i=0; i < 10; i++) {
+  //if(0)
+  // cout << "y Weight   "     << sData->GetSWeight(i,"BpYield")
+  // << "\tb Weight   "     << sData->GetSWeight(i,"BgYield")
+  // << "\ttotal Weight   " << sData->GetSumOfEventSWeight(i)
+  // << endl;
 
-  cout << endl;
+  //}
+
+  //cout << endl
 
   w.import(*data, Rename("dataWithSWeights"));
   //the reweighted data is saved in the woorkspace
+
  
  }
-
-
 //do_splot ends
 
 TH1D* make_splot(RooWorkspace& w, int n, TString label){
@@ -981,14 +1061,14 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500); 
   sig_bkg->cd();
 
-  //normalization
-  histo_Bp_bkg->Scale(1/histo_Bp_bkg->Integral());
-  histo_Bp_sig->Scale(1/histo_Bp_sig->Integral());
+  //normalization->dúvida?
+  // histo_Bp_bkg->Scale(1/histo_Bp_bkg->Integral());
+  // histo_Bp_sig->Scale(1/histo_Bp_sig->Integral());
 
   histo_Bp_sig->Draw();
   histo_Bp_bkg->Draw("same");
 
-  
+  //y axis: maximum and minimum 
   if (histo_Bp_bkg->GetMaximum() > histo_Bp_sig->GetMaximum()){
     histo_Bp_sig->GetYaxis()->SetRangeUser(0.1*histo_Bp_sig->GetMinimum(), 1.1*histo_Bp_bkg->GetMaximum());
 }
