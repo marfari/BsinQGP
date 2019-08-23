@@ -125,7 +125,7 @@ int main(){
   //COMPARISONS//
 
     
-  //sideband subtraction method vs. monte carlo
+  //Sideband Subtraction vs. Monte Carlo
 
   //clone
   vector<TH1D*> mc_comp_ss(histos_mc);
@@ -148,7 +148,6 @@ int main(){
     mc_comp_ss[i]->Scale(1/mc_comp_ss[i]->Integral());
     ss_comp_mc[i]->Scale(1/ss_comp_mc[i]->Integral());
 
-      
     mc_comp_ss[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_ss[i]->GetMinimum(),1.1*mc_comp_ss[i]->GetMaximum());
     mc_comp_ss[i]->Draw();
     ss_comp_mc[i]->Draw("same");
@@ -179,7 +178,7 @@ int main(){
   }
 
 
-  //SPlot vs sideband_subtraction
+  //SPlot vs. Sideband subtraction
 
   //clone
   vector<TH1D*> sp_comp_ss(histos_splot);
@@ -241,7 +240,7 @@ int main(){
     }     
  
 
-  //SPlot method vs MC
+  //SPlot vs. Monte Carlo
 
   //guardar no root:
   // TFile* f = new TFile("weights.root", "recreate");
@@ -326,7 +325,7 @@ int main(){
 
       //f->Close();
 
- //sideband subtraction method vs. monte carlo vs splot
+ //Sideband Subtraction vs. Monte Carlo vs SPlot
 
   //clone
   // TH1D *sp_comp = (TH1D*)histos_splot->Clone("sp_comp");
@@ -370,7 +369,7 @@ int main(){
       // histos_data[i]->Draw("same");
 
 
-      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
+      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
       mc_comp[i]->Draw();
       sp_comp[i]->Draw("same");
       ss_comp[i]->Draw("same");
