@@ -1038,8 +1038,8 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   TCanvas* prov = new TCanvas ("prov","c1",200,10,700,500);
   prov->cd();
-  //histo_Bp_sig->SetMarkerStyle(20);
-  histo_Bp_sig->SetMarkerSize(1);
+  histo_Bp_sig->SetMarkerStyle(6);
+  //histo_Bp_sig->SetMarkerSize(1);
   histo_Bp_sig->SetMarkerColor(kRed);
   histo_Bp_sig->SetLineColor(kRed);
   histo_Bp_sig->SetTitle("");
