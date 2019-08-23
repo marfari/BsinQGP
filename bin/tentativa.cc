@@ -105,7 +105,7 @@ int main(){
   build_pdf(*ws);
   plot_complete_fit(*ws);
 
-  //validate_fit(ws);
+  validate_fit(ws);
 
   //sideband_sub histograms
   histos_data = sideband_subtraction(ws, n_bins, n_var);
@@ -746,7 +746,7 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   TLegend *leg = new TLegend (0.7, 0.5, 0.85, 0.65);
   leg->AddEntry(var.GetName(), "Signal", "l");
   leg->AddEntry("dist_side", "Background", "l");
-  leg->AddEntry("hist_dist_peak", "Sinal inicial", "l");
+  leg->AddEntry("hist_dist_peak", "Signal + Background", "l");
   leg->Draw("same");
 
   std::cout<<"name: "<<var.GetName()<<std::endl;
