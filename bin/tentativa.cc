@@ -81,8 +81,9 @@ int main(){
   TString input_file_mc = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
 
   std::vector<TH1D*> histos_data;
-  std::vector<TH1D*> histos_mc;
   std::vector<TH1D*> histos_splot;
+  std::vector<TH1D*> histos_mc;
+
 
   const int n_var = 21;
 
@@ -120,7 +121,7 @@ int main(){
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
 
-  return 1;
+  //return 1;
 
 
   //COMPARISONS//
@@ -164,42 +165,6 @@ int main(){
     
   }
 
-  //sideband subtraction method vs. monte carlo vs splot
-  for(int i=0; i<(int)histos_data.size(); i++)
-    {
-      TCanvas a;
-      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_mc[i]->SetYTitle("normalized entries");
-      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      histos_mc[i]->SetStats(0);
-      histos_splot[i]->SetStats(0);
-      histos_data[i]->SetStats(0);
-
-      //normalization
-      histos_mc[i]->Scale(1/histos_mc[i]->Integral());
-      histos_splot[i]->Scale(1/histos_splot[i]->Integral());
-      histos_data[i]->Scale(1/histos_data[i]->Integral());
-
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      histos_mc[i]->Draw();
-      histos_splot[i]->Draw("same");
-      histos_data[i]->Draw("same");
-	
-      TLegend* leg;
-
-      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
-      leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
-      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
-      leg->SetTextSize(0.03);
-      leg->Draw("same");
-
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+variables[i]+"_mc_validation.pdf");
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+variables[i]+"_mc_validation.gif");
-      leg->Delete();
-
-    }
-
 
   //SPlot vs sideband_subtraction
 
@@ -212,7 +177,7 @@ int main(){
       histos_splot[i]->SetStats(0);
 
       //normalization
-      histos_data[i]->Scale(1/histos_data[i]->Integral());
+      // histos_data[i]->Scale(1/histos_data[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
       histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
@@ -246,7 +211,6 @@ int main(){
     }     
  
 
-
   //SPlot method vs MC
 
   //guardar no root:
@@ -263,8 +227,8 @@ int main(){
       histos_splot[i]->SetStats(0);
 
       //normalization
-      histos_mc[i]->Scale(1/histos_mc[i]->Integral());
-      histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+      // histos_mc[i]->Scale(1/histos_mc[i]->Integral());
+      // histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
       histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
@@ -280,7 +244,6 @@ int main(){
       rp->Draw("nogrid");
       rp->GetLowerRefYaxis()->SetTitle("Data(sp)/MC");
       rp->GetUpperRefYaxis()->SetTitle("normalized entries");
-      // histos_w = rp;
       a.Update();
      
       TLegend* leg;
@@ -296,8 +259,8 @@ int main(){
       
       leg->Delete();
       //histos_mc[i]->Delete();
-      histos_data[i]->Delete();
-      histos_splot[i]->Delete();
+      // histos_data[i]->Delete();
+      // histos_splot[i]->Delete();
     }
 
       //PARA GRAVAR:
@@ -316,6 +279,42 @@ int main(){
       //f->ls();
 
       //f->Close();
+
+ //sideband subtraction method vs. monte carlo vs splot
+  for(int i=0; i<(int)histos_data.size(); i++)
+    {
+      TCanvas a;
+      histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      histos_mc[i]->SetYTitle("normalized entries");
+      histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      histos_mc[i]->SetStats(0);
+      histos_splot[i]->SetStats(0);
+      histos_data[i]->SetStats(0);
+
+      //normalization
+      // histos_mc[i]->Scale(1/histos_mc[i]->Integral());
+      // histos_splot[i]->Scale(1/histos_splot[i]->Integral());
+      //histos_data[i]->Scale(1/histos_data[i]->Integral());
+
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->Draw();
+      histos_splot[i]->Draw("same");
+      histos_data[i]->Draw("same");
+	
+      TLegend* leg;
+
+      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+      leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
+      leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
+      leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
+      leg->SetTextSize(0.03);
+      leg->Draw("same");
+
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+variables[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+variables[i]+"_mc_validation.gif");
+      leg->Delete();
+
+    }
   
        
 
