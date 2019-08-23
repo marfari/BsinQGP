@@ -324,7 +324,7 @@ int main(){
 
       //f->Close();
 
- //Sideband Subtraction vs. Monte Carlo vs SPlot
+ //Sideband subtraction vs. Monte Carlo vs SPlot
 
   //clone
   // TH1D *sp_comp = (TH1D*)histos_splot->Clone("sp_comp");
@@ -361,17 +361,17 @@ int main(){
       sp_comp[i]->Scale(1/sp_comp[i]->Integral());
       ss_comp[i]->Scale(1/ss_comp[i]->Integral());
 
-
       //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       // histos_mc[i]->Draw();
       // histos_splot[i]->Draw("same");
       // histos_data[i]->Draw("same");
 
 
-      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
+      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.4*mc_comp[i]->GetMaximum());
       mc_comp[i]->Draw();
       sp_comp[i]->Draw("same");
       ss_comp[i]->Draw("same");
+
 	
       TLegend* leg;
 
