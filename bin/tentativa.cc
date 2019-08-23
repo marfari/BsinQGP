@@ -367,14 +367,16 @@ int main(){
       // histos_data[i]->Draw("same");
 
       //y axis: maximum and minimum 
-  if (mc_comp[i]->GetMaximum() > sp_comp[i]->GetMaximum()){
+      if ( ( mc_comp[i]->GetMaximum() > sp_comp[i]->GetMaximum() ) && ( mc_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) ){
     mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*mc_comp[i]->GetMaximum());
-}
-  else {
+	}
+      else if ( (sp_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) && ( sp_comp[i]->GetMaximum() > mc_comp[i]->GetMaximum() ) ){
+	mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*sp_comp[i]->GetMaximum());
+      }
+      else {
     mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*ss_comp[i]->GetMaximum());
   }
       
-  //mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
       mc_comp[i]->Draw();
       sp_comp[i]->Draw("same");
       ss_comp[i]->Draw("same");
@@ -811,8 +813,8 @@ TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n){
 
   h = (TH1D*)gDirectory->Get("htemp")->Clone();
   h->SetTitle("");
+  h->SetMarkerStyle(29);
   h->SetMarkerColor(kGreen);
-  h->SetMarkerStyle(7);
   h->SetMarkerSize(1);
   h->SetLineColor(kGreen);
   return h;
@@ -1036,7 +1038,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   TCanvas* prov = new TCanvas ("prov","c1",200,10,700,500);
   prov->cd();
-  histo_Bp_sig->SetMarkerStyle(6);
+  //histo_Bp_sig->SetMarkerStyle(20);
   histo_Bp_sig->SetMarkerSize(1);
   histo_Bp_sig->SetMarkerColor(kRed);
   histo_Bp_sig->SetLineColor(kRed);
