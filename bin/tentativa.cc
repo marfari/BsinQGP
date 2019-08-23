@@ -367,7 +367,7 @@ int main(){
       // histos_data[i]->Draw("same");
 
 
-      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.4*mc_comp[i]->GetMaximum());
+      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*sp_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
       mc_comp[i]->Draw();
       sp_comp[i]->Draw("same");
       ss_comp[i]->Draw("same");
