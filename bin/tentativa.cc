@@ -164,7 +164,6 @@ int main(){
     c.Update();
     
     TLegend* leg;
-    
     leg = new TLegend(0.7, 0.7, 0.9, 0.9);
     leg->AddEntry(ss_comp_mc[i]->GetName(), "S. Subtraction", "l");
     leg->AddEntry(mc_comp_ss[i]->GetName(), "Monte Carlo", "l");
@@ -377,6 +376,7 @@ int main(){
       TLegend* leg;
 
       leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+
       //leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
       //leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
       //leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
