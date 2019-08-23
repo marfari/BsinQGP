@@ -149,7 +149,7 @@ int main(){
     ss_comp_mc[i]->Scale(1/ss_comp_mc[i]->Integral());
 
       
-    mc_comp_ss[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_ss[i]->GetMinimum(),1.5*mc_comp_ss[i]->GetMaximum());
+    mc_comp_ss[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_ss[i]->GetMinimum(),1.1*mc_comp_ss[i]->GetMaximum());
     mc_comp_ss[i]->Draw();
     ss_comp_mc[i]->Draw("same");
     
@@ -207,7 +207,7 @@ int main(){
 
 
       // histos_data[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      ss_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*ss_comp_sp[i]->GetMinimum(),1.5*ss_comp_sp[i]->GetMaximum());
+      ss_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*ss_comp_sp[i]->GetMinimum(),1.1*ss_comp_sp[i]->GetMaximum());
       // histos_data[i]->Draw();
       ss_comp_sp[i]->Draw();
       //histos_splot[i]->Draw("same");
@@ -275,7 +275,7 @@ int main(){
       sp_comp_mc[i]->Scale(1/sp_comp_mc[i]->Integral());
 
       //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      mc_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_sp[i]->GetMinimum(),1.5*mc_comp_sp[i]->GetMaximum());
+      mc_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_sp[i]->GetMinimum(),1.1*mc_comp_sp[i]->GetMaximum());
       mc_comp_sp[i]->Draw();
       sp_comp_mc[i]->Draw("same");
 
@@ -370,7 +370,7 @@ int main(){
       // histos_data[i]->Draw("same");
 
 
-      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(),1.5*mc_comp[i]->GetMaximum());
+      mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(),1.1*mc_comp[i]->GetMaximum());
       mc_comp[i]->Draw();
       sp_comp[i]->Draw("same");
       ss_comp[i]->Draw("same");
