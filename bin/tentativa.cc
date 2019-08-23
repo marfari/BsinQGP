@@ -802,6 +802,7 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n){
 
 TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n){
 
+
   TH1D* h = new TH1D(var.GetName(), var.GetName(), n, var.getMin(), var.getMax());
 
   TString name_string = TString(var.GetName()) + ">>htemp(" + Form("%d",n) +"," + Form("%lf", var.getMin()) + "," + Form("%lf", var.getMax()) + ")";
@@ -811,7 +812,7 @@ TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n){
   h = (TH1D*)gDirectory->Get("htemp")->Clone();
   h->SetTitle("");
   h->SetMarkerColor(kGreen);
-  h->SetMarkerStyle(2);
+  h->SetMarkerStyle(7);
   h->SetMarkerSize(1);
   h->SetLineColor(kGreen);
   return h;
@@ -1035,7 +1036,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   TCanvas* prov = new TCanvas ("prov","c1",200,10,700,500);
   prov->cd();
-  histo_Bp_sig->SetMarkerStyle(3);
+  histo_Bp_sig->SetMarkerStyle(6);
   histo_Bp_sig->SetMarkerSize(1);
   histo_Bp_sig->SetMarkerColor(kRed);
   histo_Bp_sig->SetLineColor(kRed);
