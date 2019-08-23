@@ -63,6 +63,9 @@ void build_pdf (RooWorkspace& w);
 void plot_complete_fit(RooWorkspace& w);
 void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
+void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
+//  get_ratio(histos_splot, histos_mc,"weights.root");
+
 
 // DATA_CUT
 // 1 = apply cuts, restrict variable range when reading data -- to be used for mc validation
@@ -81,9 +84,9 @@ int main(){
   std::vector<TH1D*> histos_mc;
   std::vector<TH1D*> histos_splot;
 
-  //const int n_var = 21;
+  const int n_var = 21;
 
-  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15,15,15,15};
+  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
   TString variables[]={"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl","BsvpvDistance","BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX","BvtxY","Btrk1DzError1","Btrk1Dxy1","Btrk1DxyError1","Bd0","Bd0err"};
   
   RooWorkspace* ws = new RooWorkspace("ws");
@@ -91,26 +94,33 @@ int main(){
   set_up_workspace_variables(*ws);
   read_data(*ws,input_file_data);
   build_pdf(*ws);
-  plot_complete_fit(*ws);
+
+  // 
+  //plot_complete_fit(*ws);
  
   //sideband_sub histograms
-  histos_data = sideband_subtraction(ws, n_bins);
+  //  histos_data = sideband_subtraction(ws, n_bins);
+
+  //splot histograms
+  do_splot(*ws);
+  histos_splot = splot_method(*ws,n_bins,variables);
 
   //mc histograms
   TFile *fin_mc = new TFile(input_file_mc);
   TTree* t1_mc = (TTree*)fin_mc->Get("ntKp");
 
   std::vector<TString> names;
-  for(int i=0; i<(int)histos_data.size(); i++){
+  for(int i=0; i<n_var; i++){
     //std::cout<< "Var names: "<< histos_data[i]->GetName()<<std::endl;
-    histos_mc.push_back(create_histogram_mc((*ws->var(histos_data[i]->GetName())), t1_mc, n_bins[i]));
-    names.push_back(TString(histos_data[i]->GetName()));
+    histos_mc.push_back(create_histogram_mc((*ws->var(variables[i])), t1_mc, n_bins[i]));
+    names.push_back(TString(variables[i]));
   }
 
-  //splot histograms
-  do_splot(*ws);
-  histos_splot = splot_method(*ws,n_bins,variables);
 
+  get_ratio(histos_splot, histos_mc,names,"weights.root");
+
+
+  return 1;
 
 
   //COMPARISONS//
@@ -148,8 +158,8 @@ int main(){
     leg->SetTextSize(0.03);
     leg->Draw("same");
     
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc/"+names[i]+"_mc_validation.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc/"+names[i]+"_mc_validation.gif");
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc/"+variables[i]+"_mc_validation.pdf");
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc/"+variables[i]+"_mc_validation.gif");
     leg->Delete();
     
   }
@@ -170,7 +180,7 @@ int main(){
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
       histos_data[i]->Scale(1/histos_data[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(2*histos_data[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
       histos_data[i]->Draw("same");
@@ -184,8 +194,8 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation.pdf");
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation.gif");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+variables[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_mc_sp/"+variables[i]+"_mc_validation.gif");
       leg->Delete();
 
     }
@@ -227,8 +237,8 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+names[i]+"_mc_validation.pdf");
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+names[i]+"_mc_validation.gif");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+variables[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/ss_sp/"+variables[i]+"_mc_validation.gif");
 
 
       leg->Delete();
@@ -238,6 +248,10 @@ int main(){
 
 
   //SPlot method vs MC
+
+  //guardar no root:
+  // TFile* f = new TFile("weights.root", "recreate");
+  //TH1F* histos_w;
 
   for(int i=0; i<(int)histos_data.size(); i++)
     {
@@ -252,18 +266,21 @@ int main(){
       histos_mc[i]->Scale(1/histos_mc[i]->Integral());
       histos_splot[i]->Scale(1/histos_splot[i]->Integral());
 
-      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2.1*histos_mc[i]->GetMaximum());
+      histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
       histos_mc[i]->Draw();
       histos_splot[i]->Draw("same");
 
       //--TRATIOS--//
       
       auto rp = new TRatioPlot(histos_splot[i], histos_mc[i], "divsym");
+
+
       a.SetTicks(0, 1);
       rp->SetH1DrawOpt("E");
       rp->Draw("nogrid");
       rp->GetLowerRefYaxis()->SetTitle("Data(sp)/MC");
       rp->GetUpperRefYaxis()->SetTitle("normalized entries");
+      // histos_w = rp;
       a.Update();
      
       TLegend* leg;
@@ -274,18 +291,17 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation.pdf");
-      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation.gif");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/mc_sp/"+variables[i]+"_mc_validation.pdf");
+      a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/resultados/mc_validation_plots/mc_sp/"+variables[i]+"_mc_validation.gif");
       
       leg->Delete();
-      histos_mc[i]->Delete();
+      //histos_mc[i]->Delete();
       histos_data[i]->Delete();
       histos_splot[i]->Delete();
+    }
 
       //PARA GRAVAR:
-      //TFile* f = new TFile("tfile.root", "recreate"); 
-
-      // TH1F* h = new TH1F("h","h",10,0,10);
+      
       //for(int i=0;i<10;i++)
       // h->SetBinContent(i,i);
 
@@ -301,11 +317,57 @@ int main(){
 
       //f->Close();
   
-    }   
+       
+
+
   
 }
 //main function ends
 
+void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TString> v_name, TString filename) {
+
+  TString dir_name = "resultados/mc_validation_plots/weights/";
+
+  TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate");
+
+
+  TH1D* h_aux;
+  //std::vector<TH1D*> histos;
+  h_aux->SetDefaultSumw2(kTRUE);
+
+
+  for(int i=0; i<(int)data.size(); i++) {
+
+    //auto rp = new TRatioPlot(histos_splot[i], histos_mc[i], "divsym");
+    //rp->Write("ratioplot_"+variables[i]);
+
+    h_aux = (TH1D*)data.at(i)->Clone("weights_"+v_name.at(i));
+
+    h_aux->SetMaximum(6.);
+    h_aux->SetMinimum(0.);
+    h_aux->SetStats(0);
+    h_aux->GetYaxis()->SetTitle("Data / MC");
+
+    h_aux->Scale(1/h_aux->Integral());
+    mc[i]->Scale(1/mc[i]->Integral());
+
+    h_aux->Divide(mc.at(i));
+    
+    f_wei->cd();
+    h_aux->Write();
+    
+    TCanvas c;
+    h_aux->Draw();
+    c.SaveAs(dir_name+"/"+v_name.at(i) + "_weights.gif");
+  
+  }
+
+  f_wei->Write();
+  f_wei->ls();
+  f_wei->Close();
+
+  return;
+}
 
 void read_data(RooWorkspace& w, TString f_input){
 
@@ -603,7 +665,10 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n){
   reduceddata_side = (RooDataSet*) data->reduce(Form("Bmass>%lf",right));
   reduceddata_central = (RooDataSet*) data->reduce(Form("Bmass>%lf",left));
   reduceddata_central = (RooDataSet*) reduceddata_central->reduce(Form("Bmass<%lf",right));
- 
+
+  // do fitto background on sideband range
+  // tbd
+
   //Integrating the background distribution
 
   RooAbsReal* int_fit_side_right = fit_side->createIntegral(Bmass, "right");
