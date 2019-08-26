@@ -49,6 +49,7 @@
 #include "RooFitResult.h"
 #include "RooMCStudy.h"
 #include <iostream>
+#include <TF1.h>
 using namespace RooStats;
 using namespace RooFit;
 using namespace std;
@@ -86,10 +87,10 @@ int main(){
   std::vector<TH1D*> histos_splot;
 
 #if particle == 0
-  int n_bins[]= {25, 29, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
+  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
   TString variables[] = {"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "BsvpvDistance", "BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX", "BvtxY", "Btrk1DzError1", "Btrk1Dxy1", "Btrk1DxyError1", "Bd0","Bd0err"};
 #elif particle == 1
-  int n_bins[] = {20, 10, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10, 10, 10, 20, 20, 10, 10, 10, 10};
+  int n_bins[] = {20, 10, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10, 10, 10, 20, 20, 20, 20, 20, 20};
   TString variables[] = {"Bpt","By","Btrk1eta", "Btrk2eta", "Btrk1pt", "Btrk2pt", "Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "Bmumumass", "Btrktrkmass", "BsvpvDistance", "BsvpvDistance_Err","Balpha", "BDT_pt_5_10", "BDT_pt_10_15", "BDT_pt_15_20", "BDT_pt_20_50"};
 #endif
 
@@ -890,10 +891,10 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var){
     histos.push_back(create_histogram(variables[14], "BsvpvDistance",factor, reduceddata_side, reduceddata_central, data, n[13]));
     histos.push_back(create_histogram(variables[15], "BsvpvDistance_Err",factor, reduceddata_side, reduceddata_central, data, n[14]));
     histos.push_back(create_histogram(variables[16], "Balpha",factor, reduceddata_side, reduceddata_central, data, n[15]));
-    histos.push_back(create_histogram(variables[16], "BDT_pt_5_10",factor, reduceddata_side, reduceddata_central, data, n[16]));
-    histos.push_back(create_histogram(variables[16], "BDT_pt_10_15",factor, reduceddata_side, reduceddata_central, data, n[17]));    
-    histos.push_back(create_histogram(variables[16], "BDT_pt_15_20",factor, reduceddata_side, reduceddata_central, data, n[18]));    
-    histos.push_back(create_histogram(variables[16], "BDT_pt_20_50",factor, reduceddata_side, reduceddata_central, data, n[19]));    
+    histos.push_back(create_histogram(variables[17], "BDT_pt_5_10",factor, reduceddata_side, reduceddata_central, data, n[16]));
+    histos.push_back(create_histogram(variables[18], "BDT_pt_10_15",factor, reduceddata_side, reduceddata_central, data, n[17]));    
+    histos.push_back(create_histogram(variables[19], "BDT_pt_15_20",factor, reduceddata_side, reduceddata_central, data, n[18]));    
+    histos.push_back(create_histogram(variables[20], "BDT_pt_20_50",factor, reduceddata_side, reduceddata_central, data, n[19]));    
   }
 
   return histos;
@@ -1257,7 +1258,7 @@ std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label, int n_v
 
 void validate_fit(RooWorkspace* w)
 {
-  /*
+  
   RooRealVar Bmass = *(w->var("Bmass"));
   RooAbsPdf* model  = w->pdf("model");
 
@@ -1266,9 +1267,9 @@ void validate_fit(RooWorkspace* w)
 
   int params_size = params.size();
 
-  RooMCStudy* mcstudy = new RooMCStudy(model, Bmass, Binned(kTRUE), Silence(), Extended(), FitOptions(Save(kTRUE), PrintEvalErrors(0)));
+  RooMCStudy* mcstudy = new RooMCStudy(*model, Bmass, Binned(kTRUE), Silence(), Extended(), FitOptions(Save(kTRUE), PrintEvalErrors(0)));
 
-  mcstudy->generateAndFit(100);
+  mcstudy->generateAndFit(5000);
 
   vector<RooPlot*> framesPull, framesParam;
 
@@ -1301,6 +1302,7 @@ void validate_fit(RooWorkspace* w)
     h[i]->GetFunction("gaus")->SetLineColor(4);
     h[i]->GetFunction("gaus")->SetLineWidth(5);
     h[i]->GetXaxis()->SetTitle("Pull");
+    h[i]->GetYaxis()->SetTitle("Toy MCs");
     h[i]->Draw("same");
   }
 
@@ -1323,8 +1325,7 @@ void validate_fit(RooWorkspace* w)
     c_params->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/pulls/pulls_params_poisson_Bs.pdf");
     c_params->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/pulls/pulls_params_poisson_Bs.gif");
   }
-  */
-
+  
 }
 
 void set_up_workspace_variables(RooWorkspace& w)
