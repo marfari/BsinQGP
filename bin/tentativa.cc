@@ -73,7 +73,7 @@ void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, 
 // 0 = read full data
 // note: when reading tratio should assign weight=1 for events out of range
 
-#define DATA_CUT 1
+#define DATA_CUT 0
 #define particle 1//0 = B+;    1 = Bs;
 
 int main(){
@@ -110,8 +110,12 @@ int main(){
   set_up_workspace_variables(*ws);
   read_data(*ws,input_file_data);
   build_pdf(*ws);
-  plot_complete_fit(*ws);
-  
+
+  if(DATA_CUT == 0)
+    {
+      plot_complete_fit(*ws);
+    }
+
   validate_fit(ws);
 
   //sideband_sub histograms
@@ -641,13 +645,14 @@ void plot_complete_fit(RooWorkspace& w){
 
   RooAbsPdf*  model = w.pdf("model");
   RooDataSet* data = (RooDataSet*) w.data("data");
+  
   RooRealVar Bmass = *(w.var("Bmass"));
   RooRealVar* lambda   = w.var("lambda");
 
   RooPlot* massframe = Bmass.frame();
 
   if(particle == 0){
-    data->plotOn(massframe, RooFit::Name("Data"));
+    data->plotOn(massframe, RooFit::Name("Data"), Binning(50));
     model->plotOn(massframe, RooFit::Name("Fit"),Range("all"),LineColor(kRed),LineStyle(1),LineWidth(2));
     model->plotOn(massframe, RooFit::Name("Combinatorial"),Components("fit_side"),Range("all"),LineColor(kBlue),LineStyle(kDashed));
     model->plotOn(massframe, RooFit::Name("Signal"),Components("signal"),Range("all"),LineColor(kOrange),LineStyle(kDashed));
@@ -658,7 +663,7 @@ void plot_complete_fit(RooWorkspace& w){
     massframe->GetYaxis()->SetTitleOffset(1.3);
     massframe->SetXTitle("Bmass (GeV)");
   }else if(particle == 1){
-    data->plotOn(massframe, RooFit::Name("Data"));
+    data->plotOn(massframe, RooFit::Name("Data"), Binning(50));
     model->plotOn(massframe, RooFit::Name("Fit"),Range("all"),LineColor(kRed),LineStyle(1),LineWidth(2));
     model->plotOn(massframe, RooFit::Name("Combinatorial"),Components("fit_side"),Range("all"),LineColor(kBlue),LineStyle(kDashed));
     model->plotOn(massframe, RooFit::Name("Signal"),Components("signal"),Range("all"),LineColor(kOrange),LineStyle(kDashed));
@@ -1497,11 +1502,11 @@ void set_up_workspace_variables(RooWorkspace& w)
     double BDT_15_20_min, BDT_15_20_max;
     double BDT_20_50_min, BDT_20_50_max;
   
-    mass_min=5.;
-    mass_max=6.;
+    mass_min= 5.;
+    mass_max= 6.; 
 
     pt_min=5.;
-    pt_max=30.;
+    pt_max= DATA_CUT ? 30. : 50.;
 
     y_min=-2.4;
     y_max=2.4;
@@ -1513,10 +1518,10 @@ void set_up_workspace_variables(RooWorkspace& w)
     trk2eta_max = 2.5;
 
     trk1pt_min = 0.5;
-    trk1pt_max = 8.;
+    trk1pt_max = DATA_CUT ? 8. : 15;
 
     trk2pt_min = 0.5;
-    trk2pt_max = 8.;
+    trk2pt_max = DATA_CUT ? 8. : 15;
 
     mu1eta_min=-2.5;
     mu1eta_max=2.5;
@@ -1525,37 +1530,37 @@ void set_up_workspace_variables(RooWorkspace& w)
     mu2eta_max = 2.5;
 
     mu1pt_min=2.;
-    mu1pt_max=12.;
+    mu1pt_max= DATA_CUT ? 12. : 28;
 
-    mu2pt_min = 2.;
-    mu2pt_max = 13.;
+    mu2pt_min = 1.;
+    mu2pt_max = DATA_CUT ? 13. : 30;
 
     chi2cl_min = 0.;
     chi2cl_max = 1.;
 
-    mumumass_min = 2.98;
-    mumumass_max = 3.2;
+    mumumass_min = DATA_CUT ? 2.98 : 2.95;
+    mumumass_max = DATA_CUT ? 3.2 : 3.22;
      
     trktrkmass_min = 1.005;
     trktrkmass_max = 1.035;
 
     svpvDistance_min=0.;
-    svpvDistance_max=1;
+    svpvDistance_max=DATA_CUT ? 1. : 4.;
 
     svpvDistanceErr_min=0.;
-    svpvDistanceErr_max=0.041;
+    svpvDistanceErr_max=DATA_CUT ? 0.041 : 0.06;
 
     alpha_min=0.;
-    alpha_max=0.1;
+    alpha_max=DATA_CUT ? 0.1 : 0.5;
 
-    BDT_5_10_min = -0.1;
+    BDT_5_10_min = -0.14;
     BDT_5_10_max = 0.62;
 
-    BDT_10_15_min = 0.1;
-    BDT_10_15_max = 0.46;
+    BDT_10_15_min = DATA_CUT ? 0.1 : 0;
+    BDT_10_15_max = DATA_CUT ? 0.46 : 0.5;
 
-    BDT_15_20_min = 0.1;
-    BDT_15_20_max = 0.48;
+    BDT_15_20_min = DATA_CUT ? 0.1 : 0.05;
+    BDT_15_20_max = DATA_CUT ? 0.48 : 0.50;
 
     BDT_20_50_min = 0.1;
     BDT_20_50_max = 0.50;
