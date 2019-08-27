@@ -8,7 +8,7 @@ export SCRAM_ARCH=slc6_amd64_gcc700
 cmsrel CMSSW_10_3_1_patch3  
 cd CMSSW_10_3_1_patch3/src  
 mkdir UserCode  
-git clone <repo>  
+git clone [repo]  
 mkdir prefiltered_trees  
 
 to compile: scram b  
@@ -30,8 +30,22 @@ mkdir mc_validation
 mkdir mc_validation/sideband_sub  
 
 To run:  
-sideband_sub  
- 
+sideband_sub
+
+Some important git commands:
+
+
+1. git add [files]  
+
+2. git commit -m ["message"]  
+
+3. git push origin master (vai online)  
+
+Create remote repository and import files  
+
+1. git remote add [repository name] [repository address]  
+
+2. git pull [repository name] 
 
 
 
