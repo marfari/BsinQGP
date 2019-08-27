@@ -5,9 +5,6 @@
 <use name="roostats"/>
 #<use name="UserCode"/>
 <environment>
-  <bin name="selection_skimmer"   file="selection_skimmer.cc"></bin>
-  <bin name="sideband_subtraction" file="sideband_subtraction.cc"></bin>
-  <bin name="ss_and_splot" file="ss_and_splot.cc"></bin>
   <bin name="tentativa" file="tentativa.cc"></bin>
 </environment>
 

@@ -1,5 +1,7 @@
 /////////////////////////////////////////////////////////////////////////
 //
+// Bs and B+ mesons
+//
 // Sideband subtraction and SPlot methods
 //
 // August 2019
@@ -75,15 +77,21 @@ void pT_analysis(RooWorkspace& w,int n);
 // note: when reading tratio should assign weight=1 for events out of range
 
 #define DATA_CUT 0
-#define particle 1//0 = B+;    1 = Bs;
+
+//particle
+// 0 = B+
+// 1 = Bs
+
+#define particle 0
 
 int main(){
   
   int n_var;
+
   TString input_file_data = particle ? "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_ntphi_PbPb_2018_corrected_test_new.root" : "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_ntKp_PbPb_2018_corrected_test.root";
   TString input_file_mc = particle ? "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntphi_PbPb_2018_corrected_test_new.root" : "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
 
-  std::vector<TH1D*> histos_data;
+  std::vector<TH1D*> histos_sideband_sub;
   std::vector<TH1D*> histos_mc;
   std::vector<TH1D*> histos_splot;
 
@@ -120,17 +128,18 @@ int main(){
   validate_fit(ws);
 
   //sideband_sub histograms
-  histos_data = sideband_subtraction(ws, n_bins, n_var);
+  histos_sideband_sub = sideband_subtraction(ws, n_bins, n_var);
 
   do_splot(*ws);
   histos_splot = splot_method(*ws,n_bins,variables, n_var);
-
+  
+  //monte carlo histograms
   TFile *fin_mc = new TFile(input_file_mc);
   TTree* t1_mc = particle ? (TTree*)fin_mc->Get("ntphi") : (TTree*)fin_mc->Get("ntKp");
 
   std::vector<TString> names;
   for(int i=0; i<n_var; i++){
-    //std::cout<< "Var names: "<< histos_data[i]->GetName()<<std::endl;
+    //std::cout<< "Var names: "<< histos_sideband_sub[i]->GetName()<<std::endl;
     histos_mc.push_back(create_histogram_mc((*ws->var(variables[i])), t1_mc, n_bins[i]));
     names.push_back(TString(variables[i]));
   }
@@ -138,16 +147,15 @@ int main(){
   //get the ratio between the data (splot method) and the MC
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
-  pT_analysis(*ws, n_bins[0]);
+  if(!DATA_CUT){pT_analysis(*ws,n_bins[0]);}
 
   //COMPARISONS//
-
-    
+  
   //Sideband Subtraction vs. Monte Carlo
 
   //clone
   vector<TH1D*> mc_comp_ss(histos_mc);
-  vector<TH1D*> ss_comp_mc(histos_data);
+  vector<TH1D*> ss_comp_mc(histos_sideband_sub);
 
   for(int i=0; i<n_var; i++) {
     TCanvas c;
@@ -163,7 +171,7 @@ int main(){
     mc_comp_ss[i]->Draw();
     ss_comp_mc[i]->Draw("same");
     
-    //--TRATIOS--//
+    //--TRATIO--//
 
     auto rp = new TRatioPlot(ss_comp_mc[i] ,mc_comp_ss[i], "divsym");
     c.SetTicks(0, 1);
@@ -196,7 +204,7 @@ int main(){
 
   //clone
   vector<TH1D*> sp_comp_ss(histos_splot);
-  vector<TH1D*> ss_comp_sp(histos_data);
+  vector<TH1D*> ss_comp_sp(histos_sideband_sub);
 
   for(int i=0; i<n_var; i++)
     {
@@ -215,7 +223,7 @@ int main(){
       ss_comp_sp[i]->Draw();
       sp_comp_ss[i]->Draw("same");
 
-      //--TRATIOS--//
+      //--TRATIO--//
 
       auto rp = new TRatioPlot(ss_comp_sp[i], sp_comp_ss[i], "divsym");
       a.SetTicks(0, 1);
@@ -241,9 +249,7 @@ int main(){
 	a.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.gif");
       }
       leg->Delete();
-      
     }     
- 
 
   //SPlot vs. Monte Carlo
 
@@ -254,9 +260,10 @@ int main(){
   for(int i=0; i<n_var; i++)
     {
       TCanvas a;
-      mc_comp_sp[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      mc_comp_sp[i]->SetXTitle(TString(histos_sideband_sub[i]->GetName()));
       mc_comp_sp[i]->SetYTitle("normalized entries");
-      sp_comp_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      sp_comp_mc[i]->SetXTitle(TString(histos_sideband_sub[i]->GetName()));
+
       mc_comp_sp[i]->SetStats(0);
       sp_comp_mc[i]->SetStats(0);
 
@@ -268,7 +275,7 @@ int main(){
       mc_comp_sp[i]->Draw();
       sp_comp_mc[i]->Draw("same");
 
-      //--TRATIOS--//
+      //--TRATIO--//
       
       auto rp = new TRatioPlot(sp_comp_mc[i], mc_comp_sp[i], "divsym");
       a.SetTicks(0, 1);
@@ -297,46 +304,30 @@ int main(){
       leg->Delete();
     }
 
-    
-
   //Sideband subtraction vs. Monte Carlo vs SPlot
 
   //clone
   vector<TH1D*> sp_comp(histos_splot);
   vector<TH1D*> mc_comp(histos_mc);
-  vector<TH1D*> ss_comp(histos_data);
+  vector<TH1D*> ss_comp(histos_sideband_sub);
 
   for(int i=0; i<n_var; i++)
     {
       TCanvas a;
-      //histos_mc[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      //histos_mc[i]->SetYTitle("normalized entries");
-      //histos_splot[i]->SetXTitle(TString(histos_data[i]->GetName()));
-      //histos_mc[i]->SetStats(0);
-      // histos_splot[i]->SetStats(0);
-      // histos_data[i]->SetStats(0);
 
-      mc_comp[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      mc_comp[i]->SetXTitle(TString(ss_comp[i]->GetName()));
       mc_comp[i]->SetYTitle("normalized entries");
-      sp_comp[i]->SetXTitle(TString(histos_data[i]->GetName()));
+      sp_comp[i]->SetXTitle(TString(ss_comp[i]->GetName()));
       mc_comp[i]->SetStats(0);
       sp_comp[i]->SetStats(0);
       ss_comp[i]->SetStats(0);
 
       //normalization
-      // histos_mc[i]->Scale(1/histos_mc[i]->Integral());
-      // histos_splot[i]->Scale(1/histos_splot[i]->Integral());
-      //histos_data[i]->Scale(1/histos_data[i]->Integral());
-
       mc_comp[i]->Scale(1/mc_comp[i]->Integral());
       sp_comp[i]->Scale(1/sp_comp[i]->Integral());
       ss_comp[i]->Scale(1/ss_comp[i]->Integral());
 
-      //histos_mc[i]->GetYaxis()->SetRangeUser(0.5*histos_mc[i]->GetMinimum(),2*histos_mc[i]->GetMaximum());
-      // histos_mc[i]->Draw();
-      // histos_splot[i]->Draw("same");
-      // histos_data[i]->Draw("same");
-
+    
       //y axis: maximum and minimum 
       if ( ( mc_comp[i]->GetMaximum() > sp_comp[i]->GetMaximum() ) && ( mc_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) ){
     mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*mc_comp[i]->GetMaximum());
@@ -357,10 +348,6 @@ int main(){
 
       leg = new TLegend(0.7, 0.7, 0.9, 0.9);
 
-      //leg->AddEntry(histos_data[i]->GetName(), "S. Subtraction", "l");
-      //leg->AddEntry(histos_mc[i]->GetName(), "Monte Carlo", "l");
-      //leg->AddEntry(histos_splot[i]->GetName(), "SPlot", "l");
-
       leg->AddEntry(ss_comp[i]->GetName(), "S. Subtraction", "l");
       leg->AddEntry(mc_comp[i]->GetName(), "Monte Carlo", "l");
       leg->AddEntry(sp_comp[i]->GetName(), "SPlot", "l");
@@ -377,16 +364,24 @@ int main(){
 
       leg->Delete();
     }
-  
+
+//comparisons end
+
 }
+
+//main function ends
+
+
+//AQUILO QUE TENHO DE FAZER//
 
 void pT_analysis(RooWorkspace& w, int n){
 
-  RooAbsPdf* model = w.pdf("model");
-  RooRealVar* Bpt = w.var("Bpt");
-  RooDataSet* data = (RooDataSet*)w.data("data");
+  RooAbsPdf*  model = w.pdf("model");
+  RooRealVar* Bpt  = w.var("Bpt");
+  RooDataSet* data = (RooDataSet*) w.data("data");
 
-  #if particle == 0
+  
+#if particle == 0
   const int n_pt_bins = 7;
   double pt_bins [n_pt_bins + 1] = {5,7,10,15,20,30,50,100};  
 #elif particle == 1
@@ -476,11 +471,11 @@ void pT_analysis(RooWorkspace& w, int n){
   ptframe2Bp->Draw();
 
   if(particle == 0){
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.gif");
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.pdf");
+    a->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.gif");
+    a->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.pdf");
   }else if(particle == 1){
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.gif");
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.pdf");
+    a->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.gif");
+    a->SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.pdf");
   }
   
   //applies the splot method and evaluates the weighted average pT per bin
@@ -490,8 +485,6 @@ void pT_analysis(RooWorkspace& w, int n){
     data_pt = (RooDataSet*) data->reduce(Form("Bpt>%lf",pt_bins[i]));
     data_pt = (RooDataSet*) data_pt->reduce(Form("Bpt<%lf",pt_bins[i+1]));
     w.import(*data_pt, Rename(Form("data_pt_%d",i)));
-
-
    
     //perform fit and save result
     fit_pt = model->fitTo(*data_pt,Save());
@@ -556,6 +549,7 @@ void pT_analysis(RooWorkspace& w, int n){
 
   TCanvas c;
   TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  gr->SetTitle("");
   gr->SetMarkerColor(4);
   gr->SetMarkerStyle(21);
   gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
@@ -564,30 +558,30 @@ void pT_analysis(RooWorkspace& w, int n){
  
 
   if(particle == 0){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.gif");}
+    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.pdf");
+    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.gif");}
   else if(particle == 1){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.gif");}
+    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.pdf");
+    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.gif");}
 
   TCanvas l;
  //log scale
-  l->SetLogx();
-  l->SetLogy();
-  TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
-  gr->SetMarkerColor(4);
-  gr->SetMarkerStyle(21);
-  gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
-  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
-  gr->Draw("AP");
+  l.SetLogx();
+  l.SetLogy();
+  TGraphAsymmErrors* grlog = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  grlog->SetTitle("");
+  grlog->SetMarkerColor(4);
+  grlog->SetMarkerStyle(21);
+  grlog->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
+  grlog->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
+  grlog->Draw("AP");
 
   if(particle == 0){
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
+    l.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
+    l.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
   else if(particle == 1){
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
-
+    l.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
+    l.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
 
 }
 
@@ -628,7 +622,7 @@ void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TSt
     TCanvas c;
     h_aux->Draw();
     c.SaveAs(dir_name+"/"+v_name.at(i) + "_weights.gif");
-    //output: a root file
+    //output: a root file and plots gifs
   
   }
 
@@ -638,6 +632,8 @@ void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TSt
 
   return;
 }
+
+//get_ratio ends
 
 void read_data(RooWorkspace& w, TString f_input){
 
@@ -681,7 +677,6 @@ void read_data(RooWorkspace& w, TString f_input){
     arg_list.add(*(w.var("BDT_pt_15_20")));
     arg_list.add(*(w.var("BDT_pt_20_50")));	 
   }
-  
 
   RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
 
@@ -784,13 +779,13 @@ void build_pdf(RooWorkspace& w) {
     model.fitTo(*data,Range("all"));
     w.import(model);
     {
-  
       w.import(fit_side);
       w.import(signal);
-
     } 
   }
 }
+
+//build_pdf ends
 
 void plot_complete_fit(RooWorkspace& w){
 
@@ -1054,9 +1049,10 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var){
   }
 
   return histos;
-  //data histograms
+  
 }
-//sideband subtraction ends
+
+//sideband_subtraction ends
 
 
 TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n){
@@ -1076,6 +1072,7 @@ TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n){
   h->SetLineColor(kGreen);
   return h;
 }
+
 //create_histogram_mc ends
 
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n){
@@ -1208,13 +1205,13 @@ void do_splot(RooWorkspace& w){
 
  
  }
+
 //do_splot ends
 
 TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   //saves the plots of signal distributions, background distributions and signal+background distributions
   //in the end returns the histogram of signal
- 
 
   TCanvas* cdata = new TCanvas("sPlot","sPlot", 800, 600);
   cdata->Divide(2,2);
@@ -1261,6 +1258,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   //get the dataset with sWeights
   RooDataSet* dataW = (RooDataSet*) w.data("dataWithSWeights");
   RooDataSet* dataWBp = new RooDataSet(dataW->GetName(),dataW->GetTitle(),dataW,*dataW->get(),0,"n_signal_sw");
+  w.import(*dataWBp,Rename("dataWBp"));
   RooDataSet* dataWBg = new RooDataSet(dataW->GetName(),dataW->GetTitle(),dataW,*dataW->get(),0,"n_combinatorial_sw");
 
   RooPlot* ptframe2Bp = variable->frame();
@@ -1360,9 +1358,6 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500); 
   sig_bkg->cd();
 
-  //normalization->dúvida?
-  // histo_Bp_bkg->Scale(1/histo_Bp_bkg->Integral());
-  // histo_Bp_sig->Scale(1/histo_Bp_sig->Integral());
 
   histo_Bp_sig->Draw();
   histo_Bp_bkg->Draw("same");
@@ -1397,6 +1392,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   return histo_Bp_sig;
 
 } 
+
 //make_splot ends
 
 //SPLOT_METHOD//
@@ -1626,7 +1622,6 @@ void set_up_workspace_variables(RooWorkspace& w)
     w.import(Btrk1DxyError1);
     w.import(Bd0);
     w.import(Bd0err);
-
   }
     
   
