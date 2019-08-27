@@ -51,6 +51,9 @@
 #include "RooFitResult.h"
 #include "RooMCStudy.h"
 #include <iostream>
+//acrescentar!
+#include <RooPolynomial.h>
+#include <fstream>
 using namespace RooStats;
 using namespace RooFit;
 using namespace std;
@@ -62,16 +65,19 @@ void set_up_workspace_variables(RooWorkspace& w);
 TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n); 
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n); 
 void read_data(RooWorkspace& w, TString f_input);
-void build_pdf (RooWorkspace& w);
+void build_pdf (RooWorkspace& w, std::string choice ="nominal");
+void fit_syst_error(TString);
+
+
 void plot_complete_fit(RooWorkspace& w);
 void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 void validate_fit(RooWorkspace* w);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
-void pT_analysis(RooWorkspace& w,int n,TString);
+void pT_analysis(RooWorkspace& w,int n, TString);
 
 // DATA_CUT
-// 1 = apply cuts, restrict variable range when reading data -- to be used for mc validation
+// 1 = apply cuts, recd ..strict variable range when reading data -- to be used for mc validation
 // 0 = read full data
 // note: when reading tratio should assign weight=1 for events out of range
 
@@ -91,17 +97,15 @@ int main(){
   TString input_file_mc = particle ? "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntphi_PbPb_2018_corrected_test_new.root" : "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
 
   std::vector<TH1D*> histos_sideband_sub;
-  std::vector<TH1D*> histos_splot;
   std::vector<TH1D*> histos_mc;
+  std::vector<TH1D*> histos_splot;
 
 #if particle == 0
-  int n_bins[]= {25, 29, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
+  int n_bins[]= {25, 20, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
   TString variables[] = {"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "BsvpvDistance", "BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX", "BvtxY", "Btrk1DzError1", "Btrk1Dxy1", "Btrk1DxyError1", "Bd0","Bd0err"};
-
 #elif particle == 1
-  int n_bins[] = {20, 10, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10, 10, 10, 20, 20};
-  TString variables[] = {"Bpt","By","Btrk1eta", "Btrk2eta", "Btrk1pt", "Btrk2pt", "Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "Bmumumass", "Btrktrkmass", "BsvpvDistance", "BsvpvDistance_Err","Balpha"};
-
+  int n_bins[] = {20, 10, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10, 10, 10, 20, 20, 20, 20, 20, 20};
+  TString variables[] = {"Bpt","By","Btrk1eta", "Btrk2eta", "Btrk1pt", "Btrk2pt", "Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "Bmumumass", "Btrktrkmass", "BsvpvDistance", "BsvpvDistance_Err","Balpha", "BDT_pt_5_10", "BDT_pt_10_15", "BDT_pt_15_20", "BDT_pt_20_50"};
 #endif
 
   int n_n_bins = sizeof(n_bins)/sizeof(n_bins[0]);
@@ -119,10 +123,17 @@ int main(){
   RooWorkspace* ws = new RooWorkspace("ws");
   set_up_workspace_variables(*ws);
   read_data(*ws,input_file_data);
+
   build_pdf(*ws);
-  plot_complete_fit(*ws);
 
   validate_fit(ws);
+  //acrescentar!
+  if(!DATA_CUT){fit_syst_error(input_file_data);}
+
+  return 10;
+
+  // ... 
+  plot_complete_fit(*ws);
 
   //sideband_sub histograms
   histos_sideband_sub = sideband_subtraction(ws, n_bins, n_var);
@@ -187,12 +198,12 @@ int main(){
     leg->SetTextSize(0.03);
     leg->Draw("same");
     
-    if(particle == 0){
-      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
-      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
+    if(particle == 0){ // B+
+      c.SaveAs("./results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bu.pdf");
+      c.SaveAs("./results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bu.gif");
     }else if(particle == 1){
-      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
-      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
+      c.SaveAs("./results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
+      c.SaveAs("./results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
     }
     leg->Delete();
     
@@ -240,12 +251,12 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      if(particle == 0){
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_B+.pdf");
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_B+.gif");
+      if(particle == 0){//B+
+	a.SaveAs("./results/B+/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bu.pdf");
+	a.SaveAs("./results/B+/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bu.gif");
       }else if(particle == 1){
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.pdf");
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.gif");
+	a.SaveAs("./results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.pdf");
+	a.SaveAs("./results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.gif");
       }
       leg->Delete();
       
@@ -293,12 +304,12 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      if(particle == 0){
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_B+.pdf");
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_B+.gif");
+      if(particle == 0){//B+
+	a.SaveAs("./results/B+/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_B+.pdf");
+	a.SaveAs("./results/B+/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_B+.gif");
       }else if(particle == 1){
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.gif");
+	a.SaveAs("./results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
+	a.SaveAs("./results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.gif");
       }
       
       leg->Delete();
@@ -355,12 +366,12 @@ int main(){
       leg->SetTextSize(0.03);
       leg->Draw("same");
 
-      if(particle == 0){
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_B+.pdf");
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_B+.gif");
+      if(particle == 0){//B+
+	a.SaveAs("./results/B+/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_B+.pdf");
+	a.SaveAs("./results/B+/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_B+.gif");
       }else if(particle == 1){
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
-	a.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.gif");
+	a.SaveAs("./results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
+	a.SaveAs("./results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.gif");
       }
 
       leg->Delete();
@@ -375,7 +386,7 @@ int main(){
 
 void pT_analysis(RooWorkspace& w, int n,TString filename){
 
-  TString dir_name = particle ? "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/" : "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/";
+  TString dir_name = particle ? "./results/Bs/Bpt/" : "./results/B+/Bpt/";
 
   TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate"); 
 
@@ -474,11 +485,11 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
   ptframe2Bp->Draw();
 
   if(particle == 0){
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.gif");
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.pdf");
+    a->SaveAs("./results/B+/Bpt/pTdistributions_B+.gif");
+    a->SaveAs("./results/B+/Bpt/pTdistributions_B+.pdf");
   }else if(particle == 1){
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.gif");
-    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.pdf");
+    a->SaveAs("./results/Bs/Bpt/pTdistributions_Bs.gif");
+    a->SaveAs("./results/Bs/Bpt/pTdistributions_Bs.pdf");
   }
   
   //applies the splot method and evaluates the weighted average pT per bin
@@ -569,11 +580,11 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
   delete f_wei;
 
   if(particle == 0){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.gif");}
+    c.SaveAs("./results/B+/Bpt/raw_yield_pt_B+.pdf");
+    c.SaveAs("./results/B+/Bpt/raw_yield_pt_B+.gif");}
   else if(particle == 1){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_Bs.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_Bs.gif");}
+    c.SaveAs("./results/Bs/Bpt/raw_yield_pt_Bs.pdf");
+    c.SaveAs("./results/Bs/Bpt/raw_yield_pt_Bs.gif");}
 
   TCanvas l;
  //log scale
@@ -589,11 +600,11 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
 
 
   if(particle == 0){
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
+    l.SaveAs("./results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
+    l.SaveAs("./results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
   else if(particle == 1){
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
-    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
+    l.SaveAs("./results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
+    l.SaveAs("./results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
 
 }
 
@@ -603,7 +614,7 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
 //get the ratio between the data (splot method) and the MC and save it in a root file
 void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TString> v_name, TString filename) {
 
-  TString dir_name = particle ? "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/weights/" : "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/weights/";
+  TString dir_name = particle ? "./results/Bs/mc_validation_plots/weights/" : "./results/B+/mc_validation_plots/weights/";
 
   TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate");
 
@@ -695,11 +706,10 @@ void read_data(RooWorkspace& w, TString f_input){
 
 //read_data ends
 
-void build_pdf(RooWorkspace& w) {
+void build_pdf (RooWorkspace& w, std::string choice) {
 
   RooRealVar Bmass = *(w.var("Bmass"));
   RooDataSet* data = (RooDataSet*) w.data("data");
-
 
   RooDataSet* reduceddata_central;
 
@@ -767,12 +777,15 @@ void build_pdf(RooWorkspace& w) {
   Bmass.setRange("right",right,Bmass.getMax());
   Bmass.setRange("left",Bmass.getMin(),left);
   Bmass.setRange("peak",left,right);
+  Bmass.setRange("peakright",left,Bmass.getMax());
 
   //n values
   double n_signal_initial = data->sumEntries(TString::Format("abs(Bmass-%g)<0.05",mass_peak)) - data->sumEntries(TString::Format("abs(Bmass-%g)<0.10&&abs(Bmass-%g)>0.05",mass_peak,mass_peak));
   double n_combinatorial_initial = data->sumEntries() - n_signal_initial;
   RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries());
   RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
+
+  //  RooRealVar n_poly_bkg("n_poly_bkg","n_poly_bkg",n_combinatorial_initial,0.,data->sumEntries());
 
   RooRealVar f_erf("f_erf","f_erf",2.50259e-01,0,1);
   RooProduct n_erf("n_erf","n_erf",RooArgList(n_signal,f_erf));
@@ -781,24 +794,114 @@ void build_pdf(RooWorkspace& w) {
   f_jpsipi.setConstant(kTRUE);
   RooProduct n_jpsipi("n_jpsipi","n_jpsipi",RooArgList(n_signal,f_jpsipi));
 
-  if(particle == 0){
-    RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
-    model.fitTo(*data,Range("all"));
-    w.import(model);
-  }else if(particle == 1){
-    RooAddPdf model("model", "model", RooArgList(signal,fit_side), RooArgList(n_signal, n_combinatorial)); 
-    model.fitTo(*data,Range("all"));
-    w.import(model);
-    {
-  
-      w.import(fit_side);
-      w.import(signal);
+  //systematics
+  RooRealVar slope("slope","slope",0,-10,10);
+  RooPolynomial poly_bkg("poly_bkg", "poly_bkg", Bmass, slope);
 
-    } 
-  }
+  if(particle == 0){ // B+
+    if(choice=="nominal"){
+      RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
+      w.import(model);
+    } else if (choice=="bg_poly"){
+      RooAddPdf model("model", "model", RooArgList(signal,poly_bkg,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
+      w.import(model);
+    } else if (choice=="bg_range"){
+      RooAddPdf model("model", "model", RooArgList(signal,fit_side),RooArgList(n_signal,n_combinatorial));
+    }
+    
+  } else if(particle == 1){//Bs
+    if(choice=="nominal"){
+      RooAddPdf model("model", "model", RooArgList(signal,fit_side), RooArgList(n_signal, n_combinatorial));
+      w.import(model);
+    } else if (choice=="bg_poly"){
+      RooAddPdf model("model", "model", RooArgList(signal,poly_bkg), RooArgList(n_signal, n_combinatorial));
+      w.import(model);
+    } else if (choice=="bg_range"){
+      RooAddPdf model("model", "model", RooArgList(signal,fit_side),RooArgList(n_signal,n_combinatorial));
+      //w.import(fit_side);
+      //w.import(signal);
+    }
+  }  
+  //acrescentar! 
+
+  //first order polynomial to fit the background in the function fit_syst_error
+  //  RooRealVar slope("slope","slope",0,-1,1);
+  //RooPolynomial poly_bkg("poly_bkg", "poly_bkg", Bmass, slope);
+  //n value
+  
+  
 }
 
 //build_pdf ends
+
+//void fit_syst_error(TString fname, dataset, choice){
+void fit_syst_error(TString fname){
+  
+  RooWorkspace* ws = new RooWorkspace("ws");
+  set_up_workspace_variables(*ws);
+  read_data(*ws,fname);
+
+
+  RooDataSet* data = (RooDataSet*) ws->data("data");
+
+  build_pdf(*ws);
+  RooAbsPdf* model = ws->pdf("model");
+  RooFitResult* fitres_nom = model->fitTo(*data,Save());
+
+
+  build_pdf(*ws,"bg_poly");
+  model = ws->pdf("model");
+  RooFitResult* fitres_bgpol = model->fitTo(*data,Save());
+
+  build_pdf(*ws,"bg_range");
+  model = ws->pdf("model");
+  RooFitResult* fitres_bgrange = model->fitTo(*data,Range("peakright"),Save());
+  
+  cout << " nominal" << endl;  
+  fitres_nom->Print();
+  cout << " bgl" << endl;  
+  fitres_bgpol->Print();
+  cout << " brange" << endl;  
+  fitres_bgrange->Print();
+  
+  RooRealVar* n_nom = (RooRealVar*) fitres_nom  ->floatParsFinal().find("n_signal");
+  RooRealVar* n_bgp = (RooRealVar*) fitres_bgpol->floatParsFinal().find("n_signal");
+  RooRealVar* n_bra = (RooRealVar*) fitres_bgrange->floatParsFinal().find("n_signal");
+  double n0  = n_nom->getVal();
+  double n1  = n_bgp->getVal();
+  double n2  = n_bra->getVal();
+  double syst1 = n0 ? (n1-n0)/n0 : 0;
+  double syst2 = n0 ? (n2-n0)/n0 : 0;
+  
+  cout << "syst bg pdf:" << syst1 * 100 << "\%\trange" << syst2*100 << "\%\n";
+  
+/*
+
+ 
+  RooFitResult* fit_syst;
+  RooAbsPdf* model_syst = w.pdf("model_syst");
+
+
+  cout << " before syst" << endl;
+
+  fit_syst  = model_syst->fitTo(*data,Save());
+
+  cout << " syst" << endl;
+  fit_syst->Print();
+
+  //  RooRealVar* n_poly;
+  //n_poly = (RooRealVar*)     fit_syst->floatParsFinal().find("n_poly_bkg");
+
+  //  double  x = n_poly->getVal();
+  //  double result = (x - y)/y;
+
+  //  cout<<"result:"<<result<<endl;
+ 
+  */
+
+}
+
+//fit_syst_error ends
 
 void plot_complete_fit(RooWorkspace& w){
 
@@ -806,6 +909,8 @@ void plot_complete_fit(RooWorkspace& w){
   RooDataSet* data = (RooDataSet*) w.data("data");
   RooRealVar Bmass = *(w.var("Bmass"));
   RooRealVar* lambda   = w.var("lambda");
+
+  model->fitTo(*data,Range("all"));
 
   RooPlot* massframe = Bmass.frame();
 
@@ -934,11 +1039,11 @@ void plot_complete_fit(RooWorkspace& w){
   pull_plot->Draw();
  
   if(particle == 0){
-    d.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/complete_fit_B+.pdf");
-    d.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/complete_fit_B+.gif");
+    d.SaveAs("./results/B+/complete_fit_B+.pdf");
+    d.SaveAs("./results/B+/complete_fit_B+.gif");
   }else if(particle == 1){
-    d.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/complete_fit_Bs.pdf");
-    d.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/complete_fit_Bs.gif");
+    d.SaveAs("./results/Bs/complete_fit_Bs.pdf");
+    d.SaveAs("./results/Bs/complete_fit_Bs.gif");
   }
 }
 
@@ -1138,11 +1243,11 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   std::cout<<"histo name: "<<dist_peak->GetName()<<std::endl;
 
   if(particle == 0){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/sideband_sub/"+name + "sideband_sub_B+.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/sideband_sub/"+name + "sideband_sub_B+.gif");
+    c.SaveAs("./results/B+/sideband_sub/"+name + "sideband_sub_B+.pdf");
+    c.SaveAs("./results/B+/sideband_sub/"+name + "sideband_sub_B+.gif");
   }else if(particle == 1){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/sideband_sub/"+name + "sideband_sub_Bs.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/sideband_sub/"+name + "sideband_sub_Bs.gif");
+    c.SaveAs("./results/Bs/sideband_sub/"+name + "sideband_sub_Bs.pdf");
+    c.SaveAs("./results/Bs/sideband_sub/"+name + "sideband_sub_Bs.gif");
   }
 
   return dist_peak;
@@ -1297,11 +1402,11 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   cdata->cd(4);  ptframe2Bg->Draw();
 
   if(particle == 0){
-    cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/Bmass/"+label+"sPlot_B+.gif");
-    cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/Bmass/"+label+"sPlot_B+.pdf");
+    cdata->SaveAs("./results/B+/splot/Bmass/"+label+"sPlot_B+.gif");
+    cdata->SaveAs("./results/B+/splot/Bmass/"+label+"sPlot_B+.pdf");
   }else if(particle == 1){
-    cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/Bmass/"+label+"sPlot_Bs.gif");
-    cdata->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/Bmass/"+label+"sPlot_Bs.pdf");
+    cdata->SaveAs("./results/Bs/splot/Bmass/"+label+"sPlot_Bs.gif");
+    cdata->SaveAs("./results/Bs/splot/Bmass/"+label+"sPlot_Bs.pdf");
   }
 
   TH1D* histo_Bp_sig = (TH1D*)dataWBp->createHistogram(label,n,0,0);
@@ -1334,11 +1439,11 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   histo_Bp_sig->Draw("E");
 
   if(particle == 0){
-    prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/sig/"+label+"sPlot_B+.gif");
-    prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/sig/"+label+"sPlot_B+.pdf");
+    prov->SaveAs("./results/B+/splot/sig/"+label+"sPlot_B+.gif");
+    prov->SaveAs("./results/B+/splot/sig/"+label+"sPlot_B+.pdf");
   }else if(particle == 1){
-    prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/sig/"+label+"sPlot_Bs.gif");
-    prov->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/sig/"+label+"sPlot_Bs.pdf");
+    prov->SaveAs("./results/Bs/splot/sig/"+label+"sPlot_Bs.gif");
+    prov->SaveAs("./results/Bs/splot/sig/"+label+"sPlot_Bs.pdf");
   }
 
   TCanvas* prov_bkg = new TCanvas ("prov_bkg","c2",200,10,700,500);
@@ -1355,11 +1460,11 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   histo_Bp_bkg->Draw("E");
 
   if(particle == 0){
-    prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/bkg/"+label+"sPlot_B+.gif");
-    prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/bkg/"+label+"sPlot_B+.pdf");
+    prov_bkg->SaveAs("./results/B+/splot/bkg/"+label+"sPlot_B+.gif");
+    prov_bkg->SaveAs("./results/B+/splot/bkg/"+label+"sPlot_B+.pdf");
   }else if(particle == 1){
-    prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/bkg/"+label+"sPlot_Bs.gif");
-    prov_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/bkg/"+label+"sPlot_Bs.pdf");
+    prov_bkg->SaveAs("./results/Bs/splot/bkg/"+label+"sPlot_Bs.gif");
+    prov_bkg->SaveAs("./results/Bs/splot/bkg/"+label+"sPlot_Bs.pdf");
   }
 
   TCanvas* sig_bkg = new TCanvas ("sig_bkg","c3",200,10,700,500); 
@@ -1383,11 +1488,11 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   legend->Draw();
 
   if(particle == 0){
-    sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/sig_bkg/"+label+"sPlot_B+.gif");
-    sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/splot/sig_bkg/"+label+"sPlot_B+.pdf");
+    sig_bkg->SaveAs("./results/B+/splot/sig_bkg/"+label+"sPlot_B+.gif");
+    sig_bkg->SaveAs("./results/B+/splot/sig_bkg/"+label+"sPlot_B+.pdf");
   }else if(particle == 1){
-    sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/sig_bkg/"+label+"sPlot_Bs.gif");
-    sig_bkg->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/splot/sig_bkg/"+label+"sPlot_Bs.pdf");
+    sig_bkg->SaveAs("./results/Bs/splot/sig_bkg/"+label+"sPlot_Bs.gif");
+    sig_bkg->SaveAs("./results/Bs/splot/sig_bkg/"+label+"sPlot_Bs.pdf");
   }
 
   //cleanup
