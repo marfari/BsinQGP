@@ -478,18 +478,17 @@ void pT_analysis(RooWorkspace& w, int n){
     a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.gif");
     a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.pdf");
   }
-
-  //A PARTIR DAQUI!  
+  
   //applies the splot method and evaluates the weighted average pT per bin
 
   for(int i=0;i<n_pt_bins;i++){
     //select data subset corresponding to pT bin
     data_pt = (RooDataSet*) data->reduce(Form("Bpt>%lf",pt_bins[i]));
-    data_pt = (RooDataSet*) data->reduce(Form("Bpt<%lf",pt_bins[i+1]));
+    data_pt = (RooDataSet*) data_pt->reduce(Form("Bpt<%lf",pt_bins[i+1]));
     w.import(*data_pt, Rename(Form("data_pt_%d",i)));
 
-    
 
+   
     //perform fit and save result
     fit_pt = model->fitTo(*data_pt,Save());
 
@@ -524,32 +523,19 @@ void pT_analysis(RooWorkspace& w, int n){
     
     SPlot("sData","An sPlot",*data_pt, model, RooArgList(*n_sig_pt,*n_comb_pt));
     
-    cout<<"before importing data_pt"<<endl;
     w.import(*data_pt, Rename(Form("data_pt_WithSWeights_%d",i)));
-    cout<<"aqui!";
-
-    TCanvas eu;
-    RooPlot* ptframe = Bpt->frame();
-    data_pt->plotOn(ptframe);
-    ptframe->Draw();
-    eu.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/teste.pdf");
 
     RooDataSet* data_w = (RooDataSet*) w.data(Form("data_pt_WithSWeights_%d",i));
-
-    std::cout<< std::endl << "GETNAME: " << data_w->GetName() << std::endl;
 
     RooDataSet* data_wb = new RooDataSet(data_w->GetName(),data_w->GetTitle(),data_w,*data_w->get(),0,"n_signal_sw");
 
 
-    //get weighted average pT
-    //pt_mean[i] = RooDataWeightedAverage("mean","mean",fit_pt,data_wb,)
-    //continue...
-
-    //get for now workaround from splot projected binned pT distribution 
-    RooPlot* ptframe2Bp = Bpt->frame();
-    data_wb->plotOn(ptframe2Bp, DataError(RooAbsData::SumW2),Binning(n_pt_bins));
-    RooHist* pt_hist = ptframe2Bp->getHist();
-    pt_mean[i] = pt_hist->GetMean();
+    //weighted average pT
+    double mean_w=data_wb->mean(*Bpt);
+    double mean_s=data_pt->mean(*Bpt);
+    pt_mean[i] = data_wb->mean(*Bpt);
+    cout<<"mean_weight:"<<mean_w<<endl;
+    cout<<"mean:"<< mean_s<<endl;
 
     pt_low[i]= pt_mean[i]-pt_bins[i];
     pt_high[i]= pt_bins[i+1]-pt_mean[i];
@@ -562,25 +548,15 @@ void pT_analysis(RooWorkspace& w, int n){
 
   }
 
-  // plot yield vs average pT
-  /* TCanvas c;
-  TGraphAsymmErrors* xsec = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_l,yield_err_h);
-  gr->SetMarkerColor(4);
-  gr->SetMarkerStyle(21);
-  gr->GetXaxis()->SetTitle("<p_T>(B) [GeV]");
-  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}");
-  gr->Draw("ALP");
-  */
-
-  
+  //plot yield vs average pT
 
   TCanvas c;
   TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
   gr->SetMarkerColor(4);
   gr->SetMarkerStyle(21);
-  gr->GetXaxis()->SetTitle("<p_T>(B) [GeV]");
-  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}");
-  gr->Draw("ALP");
+  gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
+  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
+  gr->Draw("AP");
  
 
   if(particle == 0){
@@ -590,11 +566,28 @@ void pT_analysis(RooWorkspace& w, int n){
     c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.pdf");
     c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.gif");}
 
+  TCanvas l;
+ //log scale
+  l->SetLogx();
+  l->SetLogy();
+  TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  gr->SetMarkerColor(4);
+  gr->SetMarkerStyle(21);
+  gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
+  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
+  gr->Draw("AP");
+
+  if(particle == 0){
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
+  else if(particle == 1){
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
+
 }
 
 //pT_analysis ends
 
-//TERMINA AQUILO QUE TENHO DE FAZER//
 
 //get the ratio between the data (splot method) and the MC and save it in a root file
 void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TString> v_name, TString filename) {
