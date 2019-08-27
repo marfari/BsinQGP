@@ -69,10 +69,10 @@ void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 void validate_fit(RooWorkspace* w);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
-void pT_analysis(RooWorkspace& w,int n);
+void pT_analysis(RooWorkspace& w,int n, TString);
 
 // DATA_CUT
-// 1 = apply cuts, restrict variable range when reading data -- to be used for mc validation
+// 1 = apply cuts, recd ..strict variable range when reading data -- to be used for mc validation
 // 0 = read full data
 // note: when reading tratio should assign weight=1 for events out of range
 
@@ -82,7 +82,7 @@ void pT_analysis(RooWorkspace& w,int n);
 // 0 = B+
 // 1 = Bs
 
-#define particle 0
+#define particle 1
 
 int main(){
   
@@ -125,7 +125,7 @@ int main(){
       plot_complete_fit(*ws);
     }
 
-  validate_fit(ws);
+  //validate_fit(ws);
 
   //sideband_sub histograms
   histos_sideband_sub = sideband_subtraction(ws, n_bins, n_var);
@@ -147,7 +147,7 @@ int main(){
   //get the ratio between the data (splot method) and the MC
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
-  if(!DATA_CUT){pT_analysis(*ws,n_bins[0]);}
+  if(!DATA_CUT){pT_analysis(*ws,n_bins[0], "pT.root");}
 
   //COMPARISONS//
   
@@ -374,7 +374,11 @@ int main(){
 
 //AQUILO QUE TENHO DE FAZER//
 
-void pT_analysis(RooWorkspace& w, int n){
+void pT_analysis(RooWorkspace& w, int n, TString filename){
+
+  TString dir_name = particle ? "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/" : "/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/";
+
+  TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate"); 
 
   RooAbsPdf*  model = w.pdf("model");
   RooRealVar* Bpt  = w.var("Bpt");
@@ -487,7 +491,7 @@ void pT_analysis(RooWorkspace& w, int n){
     w.import(*data_pt, Rename(Form("data_pt_%d",i)));
    
     //perform fit and save result
-    fit_pt = model->fitTo(*data_pt,Save());
+    fit_pt = model->fitTo(*data_pt, Minos(true), Save());
 
     //get yield and its errors
 
@@ -500,9 +504,10 @@ void pT_analysis(RooWorkspace& w, int n){
     n_comb_pt = (RooRealVar*) fit_pt->floatParsFinal().find("n_combinatorial");
 
     yield[i] = n_sig_pt->getVal();
-    yield_err_low[i] = n_sig_pt->getAsymErrorLo(); 
-    yield_err_high[i] = n_sig_pt->getAsymErrorHi(); 
+    yield_err_low[i] = n_sig_pt->getError(); 
+    yield_err_high[i] = n_sig_pt->getError(); 
 
+    cout << "test asym error:" << n_sig_pt->getErrorLo() << " " <<  n_sig_pt->getAsymErrorLo() << " symmetric: " <<  n_sig_pt->getError() <<  endl;
 
     //sPlot technique requires model parameters (other than the yields) to be fixed
     
@@ -543,6 +548,8 @@ void pT_analysis(RooWorkspace& w, int n){
     yield_err_low[i] = yield_err_low[i]/bin_width;
     yield_err_high[i] = yield_err_high[i]/bin_width;
 
+    cout<<"pt: "<< pt_bins[i]<<"-" << pt_bins[i+1] << " mean_weight:"<<mean_w<< "  Nsig:" <<yield[i]<< "-"<<yield_err_low[i] <<"+" << yield_err_high[i]<<endl;
+
   }
 
   //plot yield vs average pT
@@ -555,17 +562,19 @@ void pT_analysis(RooWorkspace& w, int n){
   gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
   gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
   gr->Draw("AP");
+  gr->Write();
+  delete f_wei;
  
 
   if(particle == 0){
     c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.pdf");
     c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.gif");}
   else if(particle == 1){
-    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.pdf");
-    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.gif");}
+    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_Bs.pdf");
+    c.SaveAs("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_Bs.gif");}
 
   TCanvas l;
- //log scale
+  //log scale
   l.SetLogx();
   l.SetLogy();
   TGraphAsymmErrors* grlog = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
@@ -702,13 +711,16 @@ void build_pdf(RooWorkspace& w) {
   //SIGNAL//
 
   RooRealVar mean("mean","mean",mass_peak,mass_peak-0.1,mass_peak+0.1);
-  RooRealVar sigma1("sigma1","sigma1",0.021,0.020,0.030);
+  RooRealVar sigma1("sigma1","sigma1",0.0252,0.020,0.030);
   RooGaussian signal1("signal1","signal_gauss1",Bmass,mean,sigma1);
-  RooRealVar sigma2("sigma2","sigma2",0.011,0.010,0.020);
+  RooRealVar sigma2("sigma2","sigma2",0.01052,0.010,0.020);
   RooGaussian signal2("signal2","signal_gauss2",Bmass,mean,sigma2);
-  RooRealVar cofs("cofs", "cofs", 0.5, 0., 1.);
+  RooRealVar cofs("cofs", "cofs", 0.317, 0., 1.);
   RooAddPdf signal("signal", "signal", RooArgList(signal1,signal2),cofs);
-
+  sigma1.setConstant();
+  sigma2.setConstant();
+  cofs.setConstant();
+  
   //BACKGROUND//
 
   //error function
@@ -820,8 +832,11 @@ void plot_complete_fit(RooWorkspace& w){
   }
 
   TCanvas d;
+  d.SetTitle("");
+
 
   TPad *p1 = new TPad("p1","p1",0.0,0.27,0.82,0.99);
+  p1->SetTitle("");
   p1->SetBorderMode(1); 
   p1->SetFrameBorderMode(0); 
   p1->SetBorderSize(2);
@@ -831,6 +846,7 @@ void plot_complete_fit(RooWorkspace& w){
   p1->Draw(); 
      
   TPad *p2 = new TPad("p2","p2",0.0,0.065,0.82,0.24);
+  p2->SetTitle("");
   p2->SetTopMargin(0.); 
   p2->SetBottomMargin(0.2);
    
