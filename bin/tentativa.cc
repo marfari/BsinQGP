@@ -68,6 +68,7 @@ void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 void validate_fit(RooWorkspace* w);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
+void pT_analysis(RooWorkspace& w,int n);
 
 // DATA_CUT
 // 1 = apply cuts, restrict variable range when reading data -- to be used for mc validation
@@ -96,9 +97,11 @@ int main(){
 #if particle == 0
   int n_bins[]= {25, 29, 10, 10, 20, 10, 10, 10, 10, 10, 15, 10, 10, 15, 15, 15, 15, 15, 15, 15, 15};
   TString variables[] = {"Bpt","By","Btrk1eta","Btrk1Y","Btrk1pt","Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "BsvpvDistance", "BsvpvDistance_Err","Balpha","Btrk1Dz1","BvtxX", "BvtxY", "Btrk1DzError1", "Btrk1Dxy1", "Btrk1DxyError1", "Bd0","Bd0err"};
+
 #elif particle == 1
   int n_bins[] = {20, 10, 10, 10, 10, 10, 10, 10, 10, 20, 10, 10, 10, 10, 20, 20};
   TString variables[] = {"Bpt","By","Btrk1eta", "Btrk2eta", "Btrk1pt", "Btrk2pt", "Bmu1eta","Bmu2eta","Bmu1pt","Bmu2pt","Bchi2cl", "Bmumumass", "Btrktrkmass", "BsvpvDistance", "BsvpvDistance_Err","Balpha"};
+
 #endif
 
   int n_n_bins = sizeof(n_bins)/sizeof(n_bins[0]);
@@ -142,8 +145,7 @@ int main(){
   //get the ratio between the data (splot method) and the MC
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
-
-  //return 1;
+  pT_analysis(*ws,n_bins[0]);
 
 
   //COMPARISONS//
@@ -369,6 +371,223 @@ int main(){
 }
 
 //main function ends
+
+
+//AQUILO QUE TENHO DE FAZER//
+
+void pT_analysis(RooWorkspace& w, int n){
+
+  RooAbsPdf*  model = w.pdf("model");
+  RooRealVar* Bpt  = w.var("Bpt");
+  RooDataSet* data = (RooDataSet*) w.data("data");
+
+  
+#if particle == 0
+  const int n_pt_bins = 7;
+  double pt_bins [n_pt_bins + 1] = {5,7,10,15,20,30,50,100};  
+#elif particle == 1
+  const int n_pt_bins = 4;
+  double pt_bins[n_pt_bins + 1] = {5,10,15,20,50};
+#endif
+
+  double pt_mean[n_pt_bins];
+  double pt_low[n_pt_bins];
+  double pt_high[n_pt_bins];
+
+  double yield[n_pt_bins];
+  double yield_err_low[n_pt_bins];
+  double yield_err_high[n_pt_bins];
+
+  RooDataSet* data_pt, data_w, data_wp;
+  RooFitResult* fit_pt;
+  RooRealVar* n_sig_pt;
+  RooRealVar* n_comb_pt;
+
+  //plots the signal+background and signal distributions in linear and log scales
+  TCanvas* a = new TCanvas("pT","pT", 800, 600);
+  a->Divide(2,2);
+
+  //signal+bkg distribution
+
+  //linear scale
+  a->cd(1);
+  RooPlot* ptframe = Bpt->frame();
+  data->plotOn(ptframe);
+  if(particle == 0){
+    ptframe->SetTitle("pT of B+: total sample");
+  }else if(particle == 1){
+    ptframe->SetTitle("pT of Bs: total sample");
+  }
+  ptframe->Draw();
+
+  //log scale
+  a->cd(2);
+  gPad->SetLogx();
+  gPad->SetLogy();
+  data->plotOn(ptframe);
+  
+  if(particle == 0){
+    ptframe->SetTitle("pT of B+: total sample");
+  }else if(particle == 1){
+    ptframe->SetTitle("pT of Bs: total sample");
+  }
+  ptframe->SetMinimum(1);
+  ptframe->Draw();
+  
+  //signal distribution
+  RooDataSet* dataWBp = (RooDataSet*) w.data("dataWBp");
+
+  //linear scale
+  a->cd(3);
+  RooPlot* ptframe2Bp = Bpt->frame();
+  ptframe2Bp->GetYaxis()->SetTitle(TString::Format("Events / (%g)",(Bpt->getMax()-Bpt->getMin())/n));
+  dataWBp->plotOn(ptframe2Bp, DataError(RooAbsData::SumW2),Binning(n));
+
+  if(particle == 0){
+    ptframe2Bp->SetTitle("Bpt distribution of B+ for signal (splot)");
+    ptframe2Bp->GetXaxis()->SetTitle("Bpt of B+");
+  }else if(particle == 1){
+    ptframe2Bp->SetTitle("Bpt distribution of Bs for signal (splot)");
+    ptframe2Bp->GetXaxis()->SetTitle("Bpt of Bs");
+  }
+
+  ptframe2Bp->Draw();
+
+  //log scale
+  a->cd(4);
+  gPad->SetLogx();
+  gPad->SetLogy();
+  //ptframe2Bp->GetYaxis()->SetTitle(TString::Format("Events / (%g)",(Bpt->getMax()-Bpt->getMin())/n));
+  dataWBp->plotOn(ptframe2Bp, DataError(RooAbsData::SumW2),Binning(n));
+
+  if(particle == 0){
+    ptframe2Bp->SetTitle("Bpt distribution of B+ for signal (splot)");
+    ptframe2Bp->GetXaxis()->SetTitle("Bpt of B+");
+  }else if(particle == 1){
+    ptframe2Bp->SetTitle("Bpt distribution of Bs for signal (splot)");
+    ptframe2Bp->GetXaxis()->SetTitle("Bpt of Bs");
+  }
+
+  ptframe2Bp->SetMinimum(1);
+  ptframe2Bp->Draw();
+
+  if(particle == 0){
+    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.gif");
+    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/pTdistributions_B+.pdf");
+  }else if(particle == 1){
+    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.gif");
+    a->SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/pTdistributions_Bs.pdf");
+  }
+  
+  //applies the splot method and evaluates the weighted average pT per bin
+
+  for(int i=0;i<n_pt_bins;i++){
+    //select data subset corresponding to pT bin
+    data_pt = (RooDataSet*) data->reduce(Form("Bpt>%lf",pt_bins[i]));
+    data_pt = (RooDataSet*) data_pt->reduce(Form("Bpt<%lf",pt_bins[i+1]));
+    w.import(*data_pt, Rename(Form("data_pt_%d",i)));
+
+
+   
+    //perform fit and save result
+    fit_pt = model->fitTo(*data_pt,Save());
+
+    //get yield and its errors
+
+    //floatParsFinal returns the list of floating parameters after fit
+    cout << "Value of floating parameters" << endl;
+    fit_pt->floatParsFinal().Print("s");
+    //signal yield
+    n_sig_pt = (RooRealVar*) fit_pt->floatParsFinal().find("n_signal");
+    //combinatorial background yield
+    n_comb_pt = (RooRealVar*) fit_pt->floatParsFinal().find("n_combinatorial");
+
+    yield[i] = n_sig_pt->getVal();
+    yield_err_low[i] = n_sig_pt->getAsymErrorLo(); 
+    yield_err_high[i] = n_sig_pt->getAsymErrorHi(); 
+
+
+    //sPlot technique requires model parameters (other than the yields) to be fixed
+    
+    RooRealVar* mean  = w.var("mean");
+    RooRealVar* sigma1 = w.var("sigma1");
+    RooRealVar* sigma2 = w.var("sigma2");
+    RooRealVar* cofs = w.var("cofs");
+    RooRealVar* lambda = w.var("lambda");
+    
+    mean->setConstant();
+    sigma1->setConstant();
+    sigma2->setConstant();
+    cofs->setConstant();
+    lambda->setConstant();
+    
+    SPlot("sData","An sPlot",*data_pt, model, RooArgList(*n_sig_pt,*n_comb_pt));
+    
+    w.import(*data_pt, Rename(Form("data_pt_WithSWeights_%d",i)));
+
+    RooDataSet* data_w = (RooDataSet*) w.data(Form("data_pt_WithSWeights_%d",i));
+
+    RooDataSet* data_wb = new RooDataSet(data_w->GetName(),data_w->GetTitle(),data_w,*data_w->get(),0,"n_signal_sw");
+
+
+    //weighted average pT
+    double mean_w=data_wb->mean(*Bpt);
+    double mean_s=data_pt->mean(*Bpt);
+    pt_mean[i] = data_wb->mean(*Bpt);
+    cout<<"mean_weight:"<<mean_w<<endl;
+    cout<<"mean:"<< mean_s<<endl;
+
+    pt_low[i]= pt_mean[i]-pt_bins[i];
+    pt_high[i]= pt_bins[i+1]-pt_mean[i];
+
+    //normalize yield to bin width
+    double bin_width = pt_bins[i+1]-pt_bins[i];
+    yield[i] = yield[i]/bin_width;
+    yield_err_low[i] = yield_err_low[i]/bin_width;
+    yield_err_high[i] = yield_err_high[i]/bin_width;
+
+  }
+
+  //plot yield vs average pT
+
+  TCanvas c;
+  TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  gr->SetMarkerColor(4);
+  gr->SetMarkerStyle(21);
+  gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
+  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
+  gr->Draw("AP");
+ 
+
+  if(particle == 0){
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.pdf");
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.gif");}
+  else if(particle == 1){
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.pdf");
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.gif");}
+
+  TCanvas l;
+ //log scale
+  l->SetLogx();
+  l->SetLogy();
+  TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  gr->SetMarkerColor(4);
+  gr->SetMarkerStyle(21);
+  gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
+  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
+  gr->Draw("AP");
+
+  if(particle == 0){
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
+  else if(particle == 1){
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
+    l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
+
+}
+
+//pT_analysis ends
+
 
 //get the ratio between the data (splot method) and the MC and save it in a root file
 void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TString> v_name, TString filename) {
@@ -1035,6 +1254,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   //get the dataset with sWeights
   RooDataSet* dataW = (RooDataSet*) w.data("dataWithSWeights");
   RooDataSet* dataWBp = new RooDataSet(dataW->GetName(),dataW->GetTitle(),dataW,*dataW->get(),0,"n_signal_sw");
+  w.import(*dataWBp,Rename("dataWBp"));
   RooDataSet* dataWBg = new RooDataSet(dataW->GetName(),dataW->GetTitle(),dataW,*dataW->get(),0,"n_combinatorial_sw");
 
   RooPlot* ptframe2Bp = variable->frame();
@@ -1393,7 +1613,7 @@ void set_up_workspace_variables(RooWorkspace& w)
     mass_max=6.;
 
     pt_min=5.;
-    pt_max=30.;
+    pt_max=50.;
 
     y_min=-2.4;
     y_max=2.4;

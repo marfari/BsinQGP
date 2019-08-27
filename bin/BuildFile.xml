@@ -5,7 +5,7 @@
 <use name="roostats"/>
 #<use name="UserCode"/>
 <environment>
-  <bin name="bmesons"   file="Bs_Bplus.cc"></bin>
+  <bin name="bmesons"   file="tentativa.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>
