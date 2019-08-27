@@ -68,7 +68,7 @@ void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 void validate_fit(RooWorkspace* w);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
-void pT_analysis(RooWorkspace& w,int n);
+void pT_analysis(RooWorkspace& w,int n,TString);
 
 // DATA_CUT
 // 1 = apply cuts, restrict variable range when reading data -- to be used for mc validation
@@ -145,7 +145,7 @@ int main(){
   //get the ratio between the data (splot method) and the MC
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
-  if(!DATA_CUT){pT_analysis(*ws,n_bins[0]);}
+  if(!DATA_CUT){pT_analysis(*ws,n_bins[0],"pT.root");}
 
 
   //COMPARISONS//
@@ -373,9 +373,11 @@ int main(){
 //main function ends
 
 
-//AQUILO QUE TENHO DE FAZER//
+void pT_analysis(RooWorkspace& w, int n,TString filename){
 
-void pT_analysis(RooWorkspace& w, int n){
+  TString dir_name = particle ? "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/" : "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/";
+
+  TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate"); 
 
   RooAbsPdf*  model = w.pdf("model");
   RooRealVar* Bpt  = w.var("Bpt");
@@ -490,7 +492,7 @@ void pT_analysis(RooWorkspace& w, int n){
 
    
     //perform fit and save result
-    fit_pt = model->fitTo(*data_pt,Save());
+    fit_pt = model->fitTo(*data_pt,Minos(true),Save());
 
     //get yield and its errors
 
@@ -503,8 +505,11 @@ void pT_analysis(RooWorkspace& w, int n){
     n_comb_pt = (RooRealVar*) fit_pt->floatParsFinal().find("n_combinatorial");
 
     yield[i] = n_sig_pt->getVal();
-    yield_err_low[i] = n_sig_pt->getAsymErrorLo(); 
-    yield_err_high[i] = n_sig_pt->getAsymErrorHi(); 
+    yield_err_low[i]  = n_sig_pt->getError(); 
+    yield_err_high[i] = n_sig_pt->getError(); 
+
+    // how to retrieve asymetric errors? in fitto add Minos(true)   
+    cout << "test asym error:" << n_sig_pt->getErrorLo() << " " <<  n_sig_pt->getAsymErrorLo() << " symmetric: " <<  n_sig_pt->getError() <<  endl;
 
 
     //sPlot technique requires model parameters (other than the yields) to be fixed
@@ -532,10 +537,10 @@ void pT_analysis(RooWorkspace& w, int n){
 
     //weighted average pT
     double mean_w=data_wb->mean(*Bpt);
-    double mean_s=data_pt->mean(*Bpt);
+    //double mean_s=data_pt->mean(*Bpt);
     pt_mean[i] = data_wb->mean(*Bpt);
-    cout<<"mean_weight:"<<mean_w<<endl;
-    cout<<"mean:"<< mean_s<<endl;
+    //cout<<"mean_weight:"<<mean_w<<endl;
+    //cout<<"mean:"<< mean_s<<endl;
 
     pt_low[i]= pt_mean[i]-pt_bins[i];
     pt_high[i]= pt_bins[i+1]-pt_mean[i];
@@ -545,6 +550,8 @@ void pT_analysis(RooWorkspace& w, int n){
     yield[i] = yield[i]/bin_width;
     yield_err_low[i] = yield_err_low[i]/bin_width;
     yield_err_high[i] = yield_err_high[i]/bin_width;
+
+    cout<<"pt: "<< pt_bins[i]<<"-" << pt_bins[i+1] << " mean_weight:"<<mean_w<< "  Nsig:" <<yield[i]<< "-"<<yield_err_low[i] <<"+" << yield_err_high[i]<<endl;
 
   }
 
@@ -558,14 +565,15 @@ void pT_analysis(RooWorkspace& w, int n){
   gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
   gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
   gr->Draw("AP");
- 
+  gr->Write();
+  delete f_wei;
 
   if(particle == 0){
     c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.pdf");
     c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_B+.gif");}
   else if(particle == 1){
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.pdf");
-    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_B+.gif");}
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_Bs.pdf");
+    c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/Bpt/raw_yield_pt_Bs.gif");}
 
   TCanvas l;
  //log scale
@@ -578,6 +586,7 @@ void pT_analysis(RooWorkspace& w, int n){
   grlog->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
   grlog->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
   grlog->Draw("AP");
+
 
   if(particle == 0){
     l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
