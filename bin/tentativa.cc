@@ -75,13 +75,13 @@ void pT_analysis(RooWorkspace& w,int n);
 // 0 = read full data
 // note: when reading tratio should assign weight=1 for events out of range
 
-#define DATA_CUT 1
+#define DATA_CUT 0
 
 //particle
 // 0 = B+
 // 1 = Bs
 
-#define particle 0
+#define particle 1
 
 int main(){
   
@@ -145,7 +145,7 @@ int main(){
   //get the ratio between the data (splot method) and the MC
   get_ratio(histos_splot, histos_mc,names,"weights.root");
 
-  pT_analysis(*ws,n_bins[0]);
+  if(!DATA_CUT){pT_analysis(*ws,n_bins[0]);}
 
 
   //COMPARISONS//
@@ -188,8 +188,8 @@ int main(){
     leg->Draw("same");
     
     if(particle == 0){
-      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_B+.pdf");
-      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_B+.gif");
+      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
+      c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
     }else if(particle == 1){
       c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
       c.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
@@ -552,6 +552,7 @@ void pT_analysis(RooWorkspace& w, int n){
 
   TCanvas c;
   TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  gr->SetTitle("");
   gr->SetMarkerColor(4);
   gr->SetMarkerStyle(21);
   gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
@@ -568,14 +569,15 @@ void pT_analysis(RooWorkspace& w, int n){
 
   TCanvas l;
  //log scale
-  l->SetLogx();
-  l->SetLogy();
-  TGraphAsymmErrors* gr = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
-  gr->SetMarkerColor(4);
-  gr->SetMarkerStyle(21);
-  gr->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
-  gr->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
-  gr->Draw("AP");
+  l.SetLogx();
+  l.SetLogy();
+  TGraphAsymmErrors* grlog = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
+  grlog->SetTitle("");
+  grlog->SetMarkerColor(4);
+  grlog->SetMarkerStyle(21);
+  grlog->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
+  grlog->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
+  grlog->Draw("AP");
 
   if(particle == 0){
     l.SaveAs("/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
@@ -1608,12 +1610,16 @@ void set_up_workspace_variables(RooWorkspace& w)
     double svpvDistance_min, svpvDistance_max;
     double svpvDistanceErr_min, svpvDistanceErr_max;
     double alpha_min, alpha_max;
+    double BDT_5_10_min, BDT_5_10_max;
+    double BDT_10_15_min, BDT_10_15_max;
+    double BDT_15_20_min, BDT_15_20_max;
+    double BDT_20_50_min, BDT_20_50_max;
   
-    mass_min=5.;
-    mass_max=6.;
+    mass_min= 5.;
+    mass_max= 6.; 
 
     pt_min=5.;
-    pt_max=50.;
+    pt_max= DATA_CUT ? 30. : 50.;
 
     y_min=-2.4;
     y_max=2.4;
@@ -1625,10 +1631,10 @@ void set_up_workspace_variables(RooWorkspace& w)
     trk2eta_max = 2.5;
 
     trk1pt_min = 0.5;
-    trk1pt_max = 8.;
+    trk1pt_max = DATA_CUT ? 8. : 15;
 
     trk2pt_min = 0.5;
-    trk2pt_max = 8.;
+    trk2pt_max = DATA_CUT ? 8. : 15;
 
     mu1eta_min=-2.5;
     mu1eta_max=2.5;
@@ -1637,28 +1643,40 @@ void set_up_workspace_variables(RooWorkspace& w)
     mu2eta_max = 2.5;
 
     mu1pt_min=2.;
-    mu1pt_max=12.;
+    mu1pt_max= DATA_CUT ? 12. : 28;
 
-    mu2pt_min = 2.;
-    mu2pt_max = 13.;
+    mu2pt_min = 1.;
+    mu2pt_max = DATA_CUT ? 13. : 30;
 
     chi2cl_min = 0.;
     chi2cl_max = 1.;
 
-    mumumass_min = 2.98;
-    mumumass_max = 3.2;
+    mumumass_min = DATA_CUT ? 2.98 : 2.95;
+    mumumass_max = DATA_CUT ? 3.2 : 3.22;
      
     trktrkmass_min = 1.005;
     trktrkmass_max = 1.035;
 
     svpvDistance_min=0.;
-    svpvDistance_max=1;
+    svpvDistance_max=DATA_CUT ? 1. : 4.;
 
     svpvDistanceErr_min=0.;
-    svpvDistanceErr_max=0.041;
+    svpvDistanceErr_max=DATA_CUT ? 0.041 : 0.06;
 
     alpha_min=0.;
-    alpha_max=0.1;
+    alpha_max=DATA_CUT ? 0.1 : 0.5;
+
+    BDT_5_10_min = -0.14;
+    BDT_5_10_max = 0.62;
+
+    BDT_10_15_min = DATA_CUT ? 0.1 : 0;
+    BDT_10_15_max = DATA_CUT ? 0.46 : 0.5;
+
+    BDT_15_20_min = DATA_CUT ? 0.1 : 0.05;
+    BDT_15_20_max = DATA_CUT ? 0.48 : 0.50;
+
+    BDT_20_50_min = 0.1;
+    BDT_20_50_max = 0.50;
 
     RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
     RooRealVar Bpt("Bpt","Bpt",pt_min,pt_max);
@@ -1677,6 +1695,10 @@ void set_up_workspace_variables(RooWorkspace& w)
     RooRealVar BsvpvDistance("BsvpvDistance", "BsvpvDistance", svpvDistance_min, svpvDistance_max);
     RooRealVar BsvpvDistance_Err("BsvpvDistance_Err", "BsvpvDistance_Err", svpvDistanceErr_min, svpvDistanceErr_max);
     RooRealVar Balpha("Balpha", "Balpha", alpha_min, alpha_max);
+    RooRealVar BDT_pt_5_10("BDT_pt_5_10", "BDT_pt_5_10", BDT_5_10_min, BDT_5_10_max);
+    RooRealVar BDT_pt_10_15("BDT_pt_10_15", "BDT_pt_10_15", BDT_10_15_min, BDT_10_15_max);
+    RooRealVar BDT_pt_15_20("BDT_pt_15_20", "BDT_pt_15_20", BDT_15_20_min, BDT_15_20_max);
+    RooRealVar BDT_pt_20_50("BDT_pt_20_50", "BDT_pt_20_50", BDT_20_50_min, BDT_20_50_max);
  
     w.import(Bmass);
     w.import(Bpt);
@@ -1695,6 +1717,10 @@ void set_up_workspace_variables(RooWorkspace& w)
     w.import(BsvpvDistance);
     w.import(BsvpvDistance_Err);
     w.import(Balpha);
+    w.import(BDT_pt_5_10);
+    w.import(BDT_pt_10_15);
+    w.import(BDT_pt_15_20);
+    w.import(BDT_pt_20_50);
   }
 }
 
