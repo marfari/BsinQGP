@@ -10,7 +10,6 @@ TFile *f_data = new TFile("/eos/user/j/jusilva/2018_data/crab_Bfinder_20181220_H
 TTree* t2 = (TTree*)f_data->Get("Bfinder/ntphi");
 t2->AddFriend("hiEvtAnalyzer/HiTree");
 
-
 //checking number of events
 //gStyle->SetOptStat("neirmou");
 //int nevts = t1->Draw("EvtNo", "(Btrk1Pt > 1 && Btrk2Pt > 1 && Bchi2cl > 0.05 && BsvpvDistance/BsvpvDisErr > 2 && Bpt > 5 && abs(Btrk1Eta-0.0) < 2.4  && abs(Btrk2Eta-0.0) < 2.4 && Bgen==23333 && Bpt>7 && Bpt<15)");

@@ -6,6 +6,7 @@
 #<use name="UserCode"/>
 <environment>
   <bin name="tentativa" file="tentativa.cc"></bin>
+  <bin name="counter" file="counter.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>
