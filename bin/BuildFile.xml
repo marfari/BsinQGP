@@ -6,7 +6,7 @@
 #<use name="UserCode"/>
 <environment>
   <bin name="bmesons"   file="tentativa.cc"></bin>
-<bin name="bmesons2"   file="tentativa2.cc"></bin>
+<bin name="ef"   file="counter.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>

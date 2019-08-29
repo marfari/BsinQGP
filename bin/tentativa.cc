@@ -1,8 +1,11 @@
 /////////////////////////////////////////////////////////////////////////
 //
-// Bs and B+ mesons
+// Bs and Bu mesons
 //
-// Sideband subtraction and SPlot methods
+// -Sideband subtraction and SPlot methods
+// -MC comparisons
+// -Data fit and fit validation
+// -N systematics(alexandra-acrescentar)
 //
 // August 2019
 //
@@ -51,7 +54,7 @@
 #include "RooFitResult.h"
 #include "RooMCStudy.h"
 #include <iostream>
-//acrescentar!
+#include <TF1.h>
 #include <RooPolynomial.h>
 #include <fstream>
 using namespace RooStats;
@@ -65,29 +68,27 @@ void set_up_workspace_variables(RooWorkspace& w);
 TH1D* create_histogram_mc(RooRealVar var, TTree* t, int n); 
 TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* reduced, RooDataSet* central, RooDataSet* total, int n); 
 void read_data(RooWorkspace& w, TString f_input);
-void build_pdf (RooWorkspace& w, std::string choice ="nominal");
-void fit_syst_error(TString);
-
-
+void build_pdf (RooWorkspace& w);
 void plot_complete_fit(RooWorkspace& w);
 void do_splot(RooWorkspace& w);
 TH1D* make_splot(RooWorkspace& w, int n, TString label);
 void validate_fit(RooWorkspace* w);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
 void pT_analysis(RooWorkspace& w,int n, TString);
+//void fit_syst_error(TString);
 
 // DATA_CUT
 // 1 = apply cuts, recd ..strict variable range when reading data -- to be used for mc validation
 // 0 = read full data
 // note: when reading tratio should assign weight=1 for events out of range
 
-#define DATA_CUT 0
+#define DATA_CUT 1
 
 //particle
-// 0 = B+
+// 0 = Bu
 // 1 = Bs
 
-#define particle 1
+#define particle 0
 
 int main(){
   
@@ -123,22 +124,22 @@ int main(){
   RooWorkspace* ws = new RooWorkspace("ws");
   set_up_workspace_variables(*ws);
   read_data(*ws,input_file_data);
-
   build_pdf(*ws);
 
-  validate_fit(ws);
-  //acrescentar!
-  if(!DATA_CUT){fit_syst_error(input_file_data);}
+  // if(DATA_CUT == 0)
+  //{
+  // plot_complete_fit(*ws);
+  // }
 
-  return 10;
-
-  // ... 
   plot_complete_fit(*ws);
+
+  //validate_fit(ws);
+
+  // if(!DATA_CUT){fit_syst_error(input_file_data);}
 
   //sideband_sub histograms
   histos_sideband_sub = sideband_subtraction(ws, n_bins, n_var);
 
-  //splot histograms
   do_splot(*ws);
   histos_splot = splot_method(*ws,n_bins,variables, n_var);
   
@@ -154,10 +155,10 @@ int main(){
   }
 
   //get the ratio between the data (splot method) and the MC
-  get_ratio(histos_splot, histos_mc,names,"weights.root");
+ if(DATA_CUT == 1){
+   get_ratio(histos_splot, histos_mc,names,"weights.root");}
 
-  if(!DATA_CUT){pT_analysis(*ws,n_bins[0],"pT.root");}
-
+  if(!DATA_CUT){pT_analysis(*ws,n_bins[0], "pT.root");}
 
   //COMPARISONS//
   
@@ -166,49 +167,49 @@ int main(){
   //clone
   vector<TH1D*> mc_comp_ss(histos_mc);
   vector<TH1D*> ss_comp_mc(histos_sideband_sub);
-
-  for(int i=0; i<n_var; i++) {
-    TCanvas c;
-    mc_comp_ss[i]->SetXTitle(TString(ss_comp_mc[i]->GetName()));
-    mc_comp_ss[i]->SetStats(0);
-    ss_comp_mc[i]->SetStats(0);
-    
-    //normalization
-    mc_comp_ss[i]->Scale(1/mc_comp_ss[i]->Integral());
-    ss_comp_mc[i]->Scale(1/ss_comp_mc[i]->Integral());
-
-    mc_comp_ss[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_ss[i]->GetMinimum(),1.1*mc_comp_ss[i]->GetMaximum());
-    mc_comp_ss[i]->Draw();
-    ss_comp_mc[i]->Draw("same");
-    
-    //--TRATIO--//
-
-    auto rp = new TRatioPlot(ss_comp_mc[i] ,mc_comp_ss[i], "divsym");
-    c.SetTicks(0, 1);
-    rp->SetH1DrawOpt("E");
-    rp->Draw("nogrid");
-    rp->GetLowerRefYaxis()->SetTitle("Data(ss)/MC");
-    rp->GetUpperRefYaxis()->SetTitle("normalized entries");
-    c.Update();
-    
-    TLegend* leg;
-    leg = new TLegend(0.7, 0.85, 0.9, 0.95);
-    leg->AddEntry(ss_comp_mc[i]->GetName(), "S. Subtraction", "l");
-    leg->AddEntry(mc_comp_ss[i]->GetName(), "Monte Carlo", "l");
-    leg->SetTextSize(0.03);
-    leg->Draw("same");
-    
-    if(particle == 0){ // B+
-      c.SaveAs("./results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bu.pdf");
-      c.SaveAs("./results/B+/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bu.gif");
-    }else if(particle == 1){
-      c.SaveAs("./results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
-      c.SaveAs("./results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
+  if(DATA_CUT == 1){
+    for(int i=0; i<n_var; i++) {
+      TCanvas c;
+      mc_comp_ss[i]->SetXTitle(TString(ss_comp_mc[i]->GetName()));
+      mc_comp_ss[i]->SetStats(0);
+      ss_comp_mc[i]->SetStats(0);
+      
+      //normalization
+      mc_comp_ss[i]->Scale(1/mc_comp_ss[i]->Integral());
+      ss_comp_mc[i]->Scale(1/ss_comp_mc[i]->Integral());
+      
+      mc_comp_ss[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_ss[i]->GetMinimum(),1.1*mc_comp_ss[i]->GetMaximum());
+      mc_comp_ss[i]->Draw();
+      ss_comp_mc[i]->Draw("same");
+      
+      //--TRATIO--//
+      
+      auto rp = new TRatioPlot(ss_comp_mc[i] ,mc_comp_ss[i], "divsym");
+      c.SetTicks(0, 1);
+      rp->SetH1DrawOpt("E");
+      rp->Draw("nogrid");
+      rp->GetLowerRefYaxis()->SetTitle("Data(ss)/MC");
+      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
+      c.Update();
+      
+      TLegend* leg;
+      leg = new TLegend(0.7, 0.85, 0.9, 0.95);
+      leg->AddEntry(ss_comp_mc[i]->GetName(), "S. Subtraction", "l");
+      leg->AddEntry(mc_comp_ss[i]->GetName(), "Monte Carlo", "l");
+      leg->SetTextSize(0.03);
+      leg->Draw("same");
+      
+      if(particle == 0){
+	c.SaveAs("./results/Bu/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bu.pdf");
+	c.SaveAs("./results/Bu/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bu.gif");
+      }else if(particle == 1){
+	c.SaveAs("./results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.pdf");
+	c.SaveAs("./results/Bs/mc_validation_plots/ss_mc/" + names[i]+"_mc_validation_Bs.gif");
+      }
+      leg->Delete();
+      
     }
-    leg->Delete();
-    
   }
-
 
   //SPlot vs. Sideband subtraction
 
@@ -216,52 +217,52 @@ int main(){
   vector<TH1D*> sp_comp_ss(histos_splot);
   vector<TH1D*> ss_comp_sp(histos_sideband_sub);
 
-  for(int i=0; i<n_var; i++)
-    {
-      TCanvas a;
-      ss_comp_sp[i]->SetYTitle("normalized entries");
-      sp_comp_ss[i]->SetXTitle(TString(ss_comp_sp[i]->GetName()));
-      ss_comp_sp[i]->SetStats(0);
-      sp_comp_ss[i]->SetStats(0);
-
-      //normalization
-      ss_comp_sp[i]->Scale(1/ss_comp_sp[i]->Integral());
-      sp_comp_ss[i]->Scale(1/sp_comp_ss[i]->Integral());
-
-
-      ss_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*ss_comp_sp[i]->GetMinimum(),1.1*ss_comp_sp[i]->GetMaximum());
-      ss_comp_sp[i]->Draw();
-      sp_comp_ss[i]->Draw("same");
-
-      //--TRATIO--//
-
-      auto rp = new TRatioPlot(ss_comp_sp[i], sp_comp_ss[i], "divsym");
-      a.SetTicks(0, 1);
-      rp->SetH1DrawOpt("E");
-      rp->Draw("nogrid");
-      rp->GetLowerRefYaxis()->SetTitle("Data(ss)/Data(sp)");
-      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
-      a.Update();
-     
-      TLegend* leg;
-
-      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(ss_comp_sp[i]->GetName(), "Sideband Subtraction", "l");
-      leg->AddEntry(sp_comp_ss[i]->GetName(), "SPlot", "l");
-      leg->SetTextSize(0.03);
-      leg->Draw("same");
-
-      if(particle == 0){//B+
-	a.SaveAs("./results/B+/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bu.pdf");
-	a.SaveAs("./results/B+/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bu.gif");
-      }else if(particle == 1){
-	a.SaveAs("./results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.pdf");
-	a.SaveAs("./results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.gif");
+  if(DATA_CUT == 1){
+    for(int i=0; i<n_var; i++)
+      {
+	TCanvas a;
+	ss_comp_sp[i]->SetYTitle("normalized entries");
+	sp_comp_ss[i]->SetXTitle(TString(ss_comp_sp[i]->GetName()));
+	ss_comp_sp[i]->SetStats(0);
+	sp_comp_ss[i]->SetStats(0);
+	
+	//normalization
+	ss_comp_sp[i]->Scale(1/ss_comp_sp[i]->Integral());
+	sp_comp_ss[i]->Scale(1/sp_comp_ss[i]->Integral());
+	
+	
+	ss_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*ss_comp_sp[i]->GetMinimum(),1.1*ss_comp_sp[i]->GetMaximum());
+	ss_comp_sp[i]->Draw();
+	sp_comp_ss[i]->Draw("same");
+	
+	//--TRATIO--//
+	
+	auto rp = new TRatioPlot(ss_comp_sp[i], sp_comp_ss[i], "divsym");
+	a.SetTicks(0, 1);
+	rp->SetH1DrawOpt("E");
+	rp->Draw("nogrid");
+	rp->GetLowerRefYaxis()->SetTitle("Data(ss)/Data(sp)");
+	rp->GetUpperRefYaxis()->SetTitle("normalized entries");
+	a.Update();
+	
+	TLegend* leg;
+	
+	leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+	leg->AddEntry(ss_comp_sp[i]->GetName(), "Sideband Subtraction", "l");
+	leg->AddEntry(sp_comp_ss[i]->GetName(), "SPlot", "l");
+	leg->SetTextSize(0.03);
+	leg->Draw("same");
+	
+	if(particle == 0){
+	  a.SaveAs("./results/Bu/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bu.pdf");
+	  a.SaveAs("./results/Bu/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bu.gif");
+	}else if(particle == 1){
+	  a.SaveAs("./results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.pdf");
+	  a.SaveAs("./results/Bs/mc_validation_plots/ss_sp/" + names[i]+"_mc_validation_Bs.gif");
+	}
+	leg->Delete();
       }
-      leg->Delete();
-      
-    }     
- 
+  }     
 
   //SPlot vs. Monte Carlo
 
@@ -269,124 +270,127 @@ int main(){
   vector<TH1D*> sp_comp_mc(histos_splot);
   vector<TH1D*> mc_comp_sp(histos_mc);
 
-  for(int i=0; i<n_var; i++)
-    {
-      TCanvas a;
-      mc_comp_sp[i]->SetXTitle(TString(histos_sideband_sub[i]->GetName()));
-      mc_comp_sp[i]->SetYTitle("normalized entries");
-      sp_comp_mc[i]->SetXTitle(TString(histos_sideband_sub[i]->GetName()));
-      mc_comp_sp[i]->SetStats(0);
-      sp_comp_mc[i]->SetStats(0);
-
-      //normalization
-      mc_comp_sp[i]->Scale(1/mc_comp_sp[i]->Integral());
-      sp_comp_mc[i]->Scale(1/sp_comp_mc[i]->Integral());
-
-      mc_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_sp[i]->GetMinimum(),1.1*mc_comp_sp[i]->GetMaximum());
-      mc_comp_sp[i]->Draw();
-      sp_comp_mc[i]->Draw("same");
-
-      //--TRATIO--//
-      
-      auto rp = new TRatioPlot(sp_comp_mc[i], mc_comp_sp[i], "divsym");
-      a.SetTicks(0, 1);
-      rp->SetH1DrawOpt("E");
-      rp->Draw("nogrid");
-      rp->GetLowerRefYaxis()->SetTitle("Data(sp)/MC");
-      rp->GetUpperRefYaxis()->SetTitle("normalized entries");
-      a.Update();
+  if(DATA_CUT == 1){
+    for(int i=0; i<n_var; i++)
+      {
+	TCanvas a;
+	mc_comp_sp[i]->SetXTitle(TString(histos_sideband_sub[i]->GetName()));
+	mc_comp_sp[i]->SetYTitle("normalized entries");
+	sp_comp_mc[i]->SetXTitle(TString(histos_sideband_sub[i]->GetName()));
+	
+	mc_comp_sp[i]->SetStats(0);
+	sp_comp_mc[i]->SetStats(0);
+	
+	//normalization
+	mc_comp_sp[i]->Scale(1/mc_comp_sp[i]->Integral());
+	sp_comp_mc[i]->Scale(1/sp_comp_mc[i]->Integral());
+	
+	mc_comp_sp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp_sp[i]->GetMinimum(),1.1*mc_comp_sp[i]->GetMaximum());
+	mc_comp_sp[i]->Draw();
+	sp_comp_mc[i]->Draw("same");
+	
+	//--TRATIO--//
+	
+	auto rp = new TRatioPlot(sp_comp_mc[i], mc_comp_sp[i], "divsym");
+	a.SetTicks(0, 1);
+	rp->SetH1DrawOpt("E");
+	rp->Draw("nogrid");
+	rp->GetLowerRefYaxis()->SetTitle("Data(sp)/MC");
+	rp->GetUpperRefYaxis()->SetTitle("normalized entries");
+	a.Update();
      
-      TLegend* leg;
-
-      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(mc_comp_sp[i]->GetName(), "Monte Carlo", "l");
-      leg->AddEntry(sp_comp_mc[i]->GetName(), "SPlot", "l");
-      leg->SetTextSize(0.03);
-      leg->Draw("same");
-
-      if(particle == 0){//B+
-	a.SaveAs("./results/B+/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_B+.pdf");
-	a.SaveAs("./results/B+/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_B+.gif");
-      }else if(particle == 1){
-	a.SaveAs("./results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
-	a.SaveAs("./results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.gif");
+	TLegend* leg;
+	
+	leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+	leg->AddEntry(mc_comp_sp[i]->GetName(), "Monte Carlo", "l");
+	leg->AddEntry(sp_comp_mc[i]->GetName(), "SPlot", "l");
+	leg->SetTextSize(0.03);
+	leg->Draw("same");
+	
+	if(particle == 0){
+	  a.SaveAs("./results/Bu/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_Bu.pdf");
+	  a.SaveAs("./results/Bu/mc_validation_plots/mc_sp/" + names[i]+"_mc_validation_Bu.gif");
+	}else if(particle == 1){
+	  a.SaveAs("./results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
+	  a.SaveAs("./results/Bs/mc_validation_plots/mc_sp/"+names[i]+"_mc_validation_Bs.gif");
+	}
+	
+	leg->Delete();
       }
-      
-      leg->Delete();
-    }
-
-
- //Sideband subtraction vs. Monte Carlo vs SPlot
+  }
+  //Sideband subtraction vs. Monte Carlo vs SPlot
 
   //clone
   vector<TH1D*> sp_comp(histos_splot);
   vector<TH1D*> mc_comp(histos_mc);
   vector<TH1D*> ss_comp(histos_sideband_sub);
 
-  for(int i=0; i<n_var; i++)
-    {
-      TCanvas a;
-
-      mc_comp[i]->SetXTitle(TString(ss_comp[i]->GetName()));
-      mc_comp[i]->SetYTitle("normalized entries");
-      sp_comp[i]->SetXTitle(TString(ss_comp[i]->GetName()));
-      mc_comp[i]->SetStats(0);
-      sp_comp[i]->SetStats(0);
-      ss_comp[i]->SetStats(0);
-
-      //normalization
-      mc_comp[i]->Scale(1/mc_comp[i]->Integral());
-      sp_comp[i]->Scale(1/sp_comp[i]->Integral());
-      ss_comp[i]->Scale(1/ss_comp[i]->Integral());
-
-    
-      //y axis: maximum and minimum 
-      if ( ( mc_comp[i]->GetMaximum() > sp_comp[i]->GetMaximum() ) && ( mc_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) ){
-    mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*mc_comp[i]->GetMaximum());
-	}
-      else if ( (sp_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) && ( sp_comp[i]->GetMaximum() > mc_comp[i]->GetMaximum() ) ){
-	mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*sp_comp[i]->GetMaximum());
-      }
-      else {
-    mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*ss_comp[i]->GetMaximum());
-  }
-      
-      mc_comp[i]->Draw();
-      sp_comp[i]->Draw("same");
-      ss_comp[i]->Draw("same");
-
+  if(DATA_CUT == 1){
+    for(int i=0; i<n_var; i++)
+      {
+	TCanvas a;
 	
-      TLegend* leg;
-
-      leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-
-      leg->AddEntry(ss_comp[i]->GetName(), "S. Subtraction", "l");
-      leg->AddEntry(mc_comp[i]->GetName(), "Monte Carlo", "l");
-      leg->AddEntry(sp_comp[i]->GetName(), "SPlot", "l");
-      leg->SetTextSize(0.03);
-      leg->Draw("same");
-
-      if(particle == 0){//B+
-	a.SaveAs("./results/B+/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_B+.pdf");
-	a.SaveAs("./results/B+/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_B+.gif");
-      }else if(particle == 1){
-	a.SaveAs("./results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
-	a.SaveAs("./results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.gif");
+	mc_comp[i]->SetXTitle(TString(ss_comp[i]->GetName()));
+	mc_comp[i]->SetYTitle("normalized entries");
+	sp_comp[i]->SetXTitle(TString(ss_comp[i]->GetName()));
+	mc_comp[i]->SetStats(0);
+	sp_comp[i]->SetStats(0);
+	ss_comp[i]->SetStats(0);
+	
+	//normalization
+	mc_comp[i]->Scale(1/mc_comp[i]->Integral());
+	sp_comp[i]->Scale(1/sp_comp[i]->Integral());
+	ss_comp[i]->Scale(1/ss_comp[i]->Integral());
+	
+	
+	//y axis: maximum and minimum 
+	if ( ( mc_comp[i]->GetMaximum() > sp_comp[i]->GetMaximum() ) && ( mc_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) ){
+	  mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*mc_comp[i]->GetMaximum());
+	}
+	else if ( (sp_comp[i]->GetMaximum() > ss_comp[i]->GetMaximum() ) && ( sp_comp[i]->GetMaximum() > mc_comp[i]->GetMaximum() ) ){
+	  mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*sp_comp[i]->GetMaximum());
+	}
+	else {
+	  mc_comp[i]->GetYaxis()->SetRangeUser(0.1*mc_comp[i]->GetMinimum(), 1.1*ss_comp[i]->GetMaximum());
+	}
+	
+	mc_comp[i]->Draw();
+	sp_comp[i]->Draw("same");
+	ss_comp[i]->Draw("same");
+	
+	
+	TLegend* leg;
+	
+	leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+	
+	leg->AddEntry(ss_comp[i]->GetName(), "S. Subtraction", "l");
+	leg->AddEntry(mc_comp[i]->GetName(), "Monte Carlo", "l");
+	leg->AddEntry(sp_comp[i]->GetName(), "SPlot", "l");
+	leg->SetTextSize(0.03);
+	leg->Draw("same");
+	
+	if(particle == 0){
+	  a.SaveAs("./results/Bu/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bu.pdf");
+	  a.SaveAs("./results/Bu/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bu.gif");
+	}else if(particle == 1){
+	  a.SaveAs("./results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.pdf");
+	  a.SaveAs("./results/Bs/mc_validation_plots/ss_mc_sp/"+names[i]+"_mc_validation_Bs.gif");
+	}
+	
+	leg->Delete();
       }
+  }
 
-      leg->Delete();
-    }
-
-//comparisons end
+  //comparisons end
 
 }
 
 //main function ends
 
 
-void pT_analysis(RooWorkspace& w, int n,TString filename){
+void pT_analysis(RooWorkspace& w, int n, TString filename){
 
-  TString dir_name = particle ? "./results/Bs/Bpt/" : "./results/B+/Bpt/";
+  TString dir_name = particle ? "./results/Bs/Bpt/" : "./results/Bu/Bpt/";
 
   TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate"); 
 
@@ -485,8 +489,8 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
   ptframe2Bp->Draw();
 
   if(particle == 0){
-    a->SaveAs("./results/B+/Bpt/pTdistributions_B+.gif");
-    a->SaveAs("./results/B+/Bpt/pTdistributions_B+.pdf");
+    a->SaveAs("./results/Bu/Bpt/pTdistributions_Bu.gif");
+    a->SaveAs("./results/Bu/Bpt/pTdistributions_Bu.pdf");
   }else if(particle == 1){
     a->SaveAs("./results/Bs/Bpt/pTdistributions_Bs.gif");
     a->SaveAs("./results/Bs/Bpt/pTdistributions_Bs.pdf");
@@ -499,11 +503,9 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
     data_pt = (RooDataSet*) data->reduce(Form("Bpt>%lf",pt_bins[i]));
     data_pt = (RooDataSet*) data_pt->reduce(Form("Bpt<%lf",pt_bins[i+1]));
     w.import(*data_pt, Rename(Form("data_pt_%d",i)));
-
-
    
     //perform fit and save result
-    fit_pt = model->fitTo(*data_pt,Minos(true),Save());
+    fit_pt = model->fitTo(*data_pt, Minos(true), Save());
 
     //get yield and its errors
 
@@ -516,12 +518,10 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
     n_comb_pt = (RooRealVar*) fit_pt->floatParsFinal().find("n_combinatorial");
 
     yield[i] = n_sig_pt->getVal();
-    yield_err_low[i]  = n_sig_pt->getError(); 
+    yield_err_low[i] = n_sig_pt->getError(); 
     yield_err_high[i] = n_sig_pt->getError(); 
 
-    // how to retrieve asymetric errors? in fitto add Minos(true)   
     cout << "test asym error:" << n_sig_pt->getErrorLo() << " " <<  n_sig_pt->getAsymErrorLo() << " symmetric: " <<  n_sig_pt->getError() <<  endl;
-
 
     //sPlot technique requires model parameters (other than the yields) to be fixed
     
@@ -548,10 +548,10 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
 
     //weighted average pT
     double mean_w=data_wb->mean(*Bpt);
-    //double mean_s=data_pt->mean(*Bpt);
+    double mean_s=data_pt->mean(*Bpt);
     pt_mean[i] = data_wb->mean(*Bpt);
-    //cout<<"mean_weight:"<<mean_w<<endl;
-    //cout<<"mean:"<< mean_s<<endl;
+    cout<<"mean_weight:"<<mean_w<<endl;
+    cout<<"mean:"<< mean_s<<endl;
 
     pt_low[i]= pt_mean[i]-pt_bins[i];
     pt_high[i]= pt_bins[i+1]-pt_mean[i];
@@ -578,16 +578,17 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
   gr->Draw("AP");
   gr->Write();
   delete f_wei;
+ 
 
   if(particle == 0){
-    c.SaveAs("./results/B+/Bpt/raw_yield_pt_B+.pdf");
-    c.SaveAs("./results/B+/Bpt/raw_yield_pt_B+.gif");}
+    c.SaveAs("./results/Bu/Bpt/raw_yield_pt_Bu.pdf");
+    c.SaveAs("./results/Bu/Bpt/raw_yield_pt_Bu.gif");}
   else if(particle == 1){
     c.SaveAs("./results/Bs/Bpt/raw_yield_pt_Bs.pdf");
     c.SaveAs("./results/Bs/Bpt/raw_yield_pt_Bs.gif");}
 
   TCanvas l;
- //log scale
+  //log scale
   l.SetLogx();
   l.SetLogy();
   TGraphAsymmErrors* grlog = new TGraphAsymmErrors(n_pt_bins,pt_mean,yield,pt_low,pt_high,yield_err_low,yield_err_high);
@@ -598,23 +599,19 @@ void pT_analysis(RooWorkspace& w, int n,TString filename){
   grlog->GetYaxis()->SetTitle("raw yield [GeV^{-1}]");
   grlog->Draw("AP");
 
-
   if(particle == 0){
-    l.SaveAs("./results/B+/Bpt/raw_yield_pt_logscale_B+.pdf");
-    l.SaveAs("./results/B+/Bpt/raw_yield_pt_logscale_B+.gif");}
+    l.SaveAs("./results/Bu/Bpt/raw_yield_pt_logscale_Bu.pdf");
+    l.SaveAs("./results/Bu/Bpt/raw_yield_pt_logscale_Bu.gif");}
   else if(particle == 1){
     l.SaveAs("./results/Bs/Bpt/raw_yield_pt_logscale_Bs.pdf");
     l.SaveAs("./results/Bs/Bpt/raw_yield_pt_logscale_Bs.gif");}
 
 }
 
-//pT_analysis ends
-
-
 //get the ratio between the data (splot method) and the MC and save it in a root file
 void get_ratio( std::vector<TH1D*> data, std::vector<TH1D*> mc,  std::vector<TString> v_name, TString filename) {
 
-  TString dir_name = particle ? "./results/Bs/mc_validation_plots/weights/" : "./results/B+/mc_validation_plots/weights/";
+  TString dir_name = particle ? "./results/Bs/mc_validation_plots/weights/" : "./results/Bu/mc_validation_plots/weights/";
 
   TFile* f_wei = new TFile(dir_name + "/"+ filename, "recreate");
 
@@ -697,6 +694,12 @@ void read_data(RooWorkspace& w, TString f_input){
     arg_list.add(*(w.var("Bd0")));
     arg_list.add(*(w.var("Bd0err")));
   }
+  if(particle == 1){
+    arg_list.add(*(w.var("BDT_pt_5_10")));
+    arg_list.add(*(w.var("BDT_pt_10_15")));
+    arg_list.add(*(w.var("BDT_pt_15_20")));
+    arg_list.add(*(w.var("BDT_pt_20_50")));	 
+  }
 
   RooDataSet* data = new RooDataSet("data","data",t1_data,arg_list);
 
@@ -704,12 +707,11 @@ void read_data(RooWorkspace& w, TString f_input){
 
 }
 
-//read_data ends
-
-void build_pdf (RooWorkspace& w, std::string choice) {
+void build_pdf(RooWorkspace& w) {
 
   RooRealVar Bmass = *(w.var("Bmass"));
   RooDataSet* data = (RooDataSet*) w.data("data");
+
 
   RooDataSet* reduceddata_central;
 
@@ -723,13 +725,18 @@ void build_pdf (RooWorkspace& w, std::string choice) {
   //SIGNAL//
 
   RooRealVar mean("mean","mean",mass_peak,mass_peak-0.1,mass_peak+0.1);
-  RooRealVar sigma1("sigma1","sigma1",0.021,0.020,0.030);
+  RooRealVar sigma1("sigma1","sigma1",0.0252,0.020,0.030);
   RooGaussian signal1("signal1","signal_gauss1",Bmass,mean,sigma1);
-  RooRealVar sigma2("sigma2","sigma2",0.011,0.010,0.020);
+  RooRealVar sigma2("sigma2","sigma2",0.01052,0.010,0.020);
   RooGaussian signal2("signal2","signal_gauss2",Bmass,mean,sigma2);
-  RooRealVar cofs("cofs", "cofs", 0.5, 0., 1.);
+  RooRealVar cofs("cofs", "cofs", 0.317, 0., 1.);
   RooAddPdf signal("signal", "signal", RooArgList(signal1,signal2),cofs);
-
+  //sigma1.setConstant();
+  //sigma2.setConstant();
+  //cofs.setConstant();
+  //introduzir parâmetro de escala
+  
+  
   //BACKGROUND//
 
   //error function
@@ -777,15 +784,12 @@ void build_pdf (RooWorkspace& w, std::string choice) {
   Bmass.setRange("right",right,Bmass.getMax());
   Bmass.setRange("left",Bmass.getMin(),left);
   Bmass.setRange("peak",left,right);
-  Bmass.setRange("peakright",left,Bmass.getMax());
 
   //n values
   double n_signal_initial = data->sumEntries(TString::Format("abs(Bmass-%g)<0.05",mass_peak)) - data->sumEntries(TString::Format("abs(Bmass-%g)<0.10&&abs(Bmass-%g)>0.05",mass_peak,mass_peak));
   double n_combinatorial_initial = data->sumEntries() - n_signal_initial;
   RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries());
   RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
-
-  //  RooRealVar n_poly_bkg("n_poly_bkg","n_poly_bkg",n_combinatorial_initial,0.,data->sumEntries());
 
   RooRealVar f_erf("f_erf","f_erf",2.50259e-01,0,1);
   RooProduct n_erf("n_erf","n_erf",RooArgList(n_signal,f_erf));
@@ -794,123 +798,30 @@ void build_pdf (RooWorkspace& w, std::string choice) {
   f_jpsipi.setConstant(kTRUE);
   RooProduct n_jpsipi("n_jpsipi","n_jpsipi",RooArgList(n_signal,f_jpsipi));
 
-  //systematics
-  RooRealVar slope("slope","slope",0,-10,10);
-  RooPolynomial poly_bkg("poly_bkg", "poly_bkg", Bmass, slope);
-
-  if(particle == 0){ // B+
-    if(choice=="nominal"){
-      RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
-      w.import(model);
-    } else if (choice=="bg_poly"){
-      RooAddPdf model("model", "model", RooArgList(signal,poly_bkg,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
-      w.import(model);
-    } else if (choice=="bg_range"){
-      RooAddPdf model("model", "model", RooArgList(signal,fit_side),RooArgList(n_signal,n_combinatorial));
-    }
-    
-  } else if(particle == 1){//Bs
-    if(choice=="nominal"){
-      RooAddPdf model("model", "model", RooArgList(signal,fit_side), RooArgList(n_signal, n_combinatorial));
-      w.import(model);
-    } else if (choice=="bg_poly"){
-      RooAddPdf model("model", "model", RooArgList(signal,poly_bkg), RooArgList(n_signal, n_combinatorial));
-      w.import(model);
-    } else if (choice=="bg_range"){
-      RooAddPdf model("model", "model", RooArgList(signal,fit_side),RooArgList(n_signal,n_combinatorial));
-      //w.import(fit_side);
-      //w.import(signal);
-    }
-  }  
-  //acrescentar! 
-
-  //first order polynomial to fit the background in the function fit_syst_error
-  //  RooRealVar slope("slope","slope",0,-1,1);
-  //RooPolynomial poly_bkg("poly_bkg", "poly_bkg", Bmass, slope);
-  //n value
-  
-  
+  if(particle == 0){
+    RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
+    model.fitTo(*data,Range("all"));
+    w.import(model);
+  }else if(particle == 1){
+    RooAddPdf model("model", "model", RooArgList(signal,fit_side), RooArgList(n_signal, n_combinatorial)); 
+    model.fitTo(*data,Range("all"));
+    w.import(model);
+    {
+      w.import(fit_side);
+      w.import(signal);
+    } 
+  }
 }
 
 //build_pdf ends
-
-//void fit_syst_error(TString fname, dataset, choice){
-void fit_syst_error(TString fname){
-  
-  RooWorkspace* ws = new RooWorkspace("ws");
-  set_up_workspace_variables(*ws);
-  read_data(*ws,fname);
-
-
-  RooDataSet* data = (RooDataSet*) ws->data("data");
-
-  build_pdf(*ws);
-  RooAbsPdf* model = ws->pdf("model");
-  RooFitResult* fitres_nom = model->fitTo(*data,Save());
-
-
-  build_pdf(*ws,"bg_poly");
-  model = ws->pdf("model");
-  RooFitResult* fitres_bgpol = model->fitTo(*data,Save());
-
-  build_pdf(*ws,"bg_range");
-  model = ws->pdf("model");
-  RooFitResult* fitres_bgrange = model->fitTo(*data,Range("peakright"),Save());
-  
-  cout << " nominal" << endl;  
-  fitres_nom->Print();
-  cout << " bgl" << endl;  
-  fitres_bgpol->Print();
-  cout << " brange" << endl;  
-  fitres_bgrange->Print();
-  
-  RooRealVar* n_nom = (RooRealVar*) fitres_nom  ->floatParsFinal().find("n_signal");
-  RooRealVar* n_bgp = (RooRealVar*) fitres_bgpol->floatParsFinal().find("n_signal");
-  RooRealVar* n_bra = (RooRealVar*) fitres_bgrange->floatParsFinal().find("n_signal");
-  double n0  = n_nom->getVal();
-  double n1  = n_bgp->getVal();
-  double n2  = n_bra->getVal();
-  double syst1 = n0 ? (n1-n0)/n0 : 0;
-  double syst2 = n0 ? (n2-n0)/n0 : 0;
-  
-  cout << "syst bg pdf:" << syst1 * 100 << "\%\trange" << syst2*100 << "\%\n";
-  
-/*
-
- 
-  RooFitResult* fit_syst;
-  RooAbsPdf* model_syst = w.pdf("model_syst");
-
-
-  cout << " before syst" << endl;
-
-  fit_syst  = model_syst->fitTo(*data,Save());
-
-  cout << " syst" << endl;
-  fit_syst->Print();
-
-  //  RooRealVar* n_poly;
-  //n_poly = (RooRealVar*)     fit_syst->floatParsFinal().find("n_poly_bkg");
-
-  //  double  x = n_poly->getVal();
-  //  double result = (x - y)/y;
-
-  //  cout<<"result:"<<result<<endl;
- 
-  */
-
-}
-
-//fit_syst_error ends
 
 void plot_complete_fit(RooWorkspace& w){
 
   RooAbsPdf*  model = w.pdf("model");
   RooDataSet* data = (RooDataSet*) w.data("data");
+  
   RooRealVar Bmass = *(w.var("Bmass"));
   RooRealVar* lambda   = w.var("lambda");
-
-  model->fitTo(*data,Range("all"));
 
   RooPlot* massframe = Bmass.frame();
 
@@ -937,8 +848,11 @@ void plot_complete_fit(RooWorkspace& w){
   }
 
   TCanvas d;
+  d.SetTitle("");
+
 
   TPad *p1 = new TPad("p1","p1",0.0,0.27,0.82,0.99);
+  p1->SetTitle("");
   p1->SetBorderMode(1); 
   p1->SetFrameBorderMode(0); 
   p1->SetBorderSize(2);
@@ -948,6 +862,7 @@ void plot_complete_fit(RooWorkspace& w){
   p1->Draw(); 
      
   TPad *p2 = new TPad("p2","p2",0.0,0.065,0.82,0.24);
+  p2->SetTitle("");
   p2->SetTopMargin(0.); 
   p2->SetBottomMargin(0.2);
    
@@ -1038,12 +953,15 @@ void plot_complete_fit(RooWorkspace& w){
   p2->cd();
   pull_plot->Draw();
  
-  if(particle == 0){
-    d.SaveAs("./results/B+/complete_fit_B+.pdf");
-    d.SaveAs("./results/B+/complete_fit_B+.gif");
-  }else if(particle == 1){
-    d.SaveAs("./results/Bs/complete_fit_Bs.pdf");
-    d.SaveAs("./results/Bs/complete_fit_Bs.gif");
+  //only saves the fit when no cuts are applied
+  if(DATA_CUT == 0){
+    if(particle == 0){
+      d.SaveAs("./results/Bu/complete_fit_Bu.pdf");
+      d.SaveAs("./results/Bu/complete_fit_Bu.gif");
+    }else if(particle == 1){
+      d.SaveAs("./results/Bs/complete_fit_Bs.pdf");
+      d.SaveAs("./results/Bs/complete_fit_Bs.gif");
+    }
   }
 }
 
@@ -1084,6 +1002,11 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var){
     variables.push_back(*(w->var("Btrk1DxyError1")));
     variables.push_back(*(w->var("Bd0")));
     variables.push_back(*(w->var("Bd0err")));
+  }
+  if(particle == 1){variables.push_back(*(w->var("BDT_pt_5_10")));
+    variables.push_back(*(w->var("BDT_pt_10_15")));
+    variables.push_back(*(w->var("BDT_pt_15_20")));
+    variables.push_back(*(w->var("BDT_pt_20_50")));
   }
 
   RooDataSet* reduceddata_side;
@@ -1156,6 +1079,10 @@ std::vector<TH1D*> sideband_subtraction(RooWorkspace* w, int* n, int n_var){
     histos.push_back(create_histogram(variables[14], "BsvpvDistance",factor, reduceddata_side, reduceddata_central, data, n[13]));
     histos.push_back(create_histogram(variables[15], "BsvpvDistance_Err",factor, reduceddata_side, reduceddata_central, data, n[14]));
     histos.push_back(create_histogram(variables[16], "Balpha",factor, reduceddata_side, reduceddata_central, data, n[15]));
+    histos.push_back(create_histogram(variables[17], "BDT_pt_5_10",factor, reduceddata_side, reduceddata_central, data, n[16]));
+    histos.push_back(create_histogram(variables[18], "BDT_pt_10_15",factor, reduceddata_side, reduceddata_central, data, n[17]));    
+    histos.push_back(create_histogram(variables[19], "BDT_pt_15_20",factor, reduceddata_side, reduceddata_central, data, n[18]));    
+    histos.push_back(create_histogram(variables[20], "BDT_pt_20_50",factor, reduceddata_side, reduceddata_central, data, n[19]));    
   }
 
   return histos;
@@ -1243,8 +1170,8 @@ TH1D* create_histogram(RooRealVar var,TString name, double factor, RooDataSet* r
   std::cout<<"histo name: "<<dist_peak->GetName()<<std::endl;
 
   if(particle == 0){
-    c.SaveAs("./results/B+/sideband_sub/"+name + "sideband_sub_B+.pdf");
-    c.SaveAs("./results/B+/sideband_sub/"+name + "sideband_sub_B+.gif");
+    c.SaveAs("./results/Bu/sideband_sub/"+name + "sideband_sub_Bu.pdf");
+    c.SaveAs("./results/Bu/sideband_sub/"+name + "sideband_sub_Bu.gif");
   }else if(particle == 1){
     c.SaveAs("./results/Bs/sideband_sub/"+name + "sideband_sub_Bs.pdf");
     c.SaveAs("./results/Bs/sideband_sub/"+name + "sideband_sub_Bs.gif");
@@ -1322,7 +1249,6 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   //saves the plots of signal distributions, background distributions and signal+background distributions
   //in the end returns the histogram of signal
- 
 
   TCanvas* cdata = new TCanvas("sPlot","sPlot", 800, 600);
   cdata->Divide(2,2);
@@ -1339,8 +1265,7 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
 
   double sigYield = BpYield->getVal();
   double bkgYield = BgYield->getVal();
-
-
+  
   RooDataSet* data = (RooDataSet*) w.data("data");
 
   cdata->cd(1);
@@ -1402,8 +1327,8 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   cdata->cd(4);  ptframe2Bg->Draw();
 
   if(particle == 0){
-    cdata->SaveAs("./results/B+/splot/Bmass/"+label+"sPlot_B+.gif");
-    cdata->SaveAs("./results/B+/splot/Bmass/"+label+"sPlot_B+.pdf");
+    cdata->SaveAs("./results/Bu/splot/Bmass/"+label+"sPlot_Bu.gif");
+    cdata->SaveAs("./results/Bu/splot/Bmass/"+label+"sPlot_Bu.pdf");
   }else if(particle == 1){
     cdata->SaveAs("./results/Bs/splot/Bmass/"+label+"sPlot_Bs.gif");
     cdata->SaveAs("./results/Bs/splot/Bmass/"+label+"sPlot_Bs.pdf");
@@ -1439,8 +1364,8 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   histo_Bp_sig->Draw("E");
 
   if(particle == 0){
-    prov->SaveAs("./results/B+/splot/sig/"+label+"sPlot_B+.gif");
-    prov->SaveAs("./results/B+/splot/sig/"+label+"sPlot_B+.pdf");
+    prov->SaveAs("./results/Bu/splot/sig/"+label+"sPlot_Bu.gif");
+    prov->SaveAs("./results/Bu/splot/sig/"+label+"sPlot_Bu.pdf");
   }else if(particle == 1){
     prov->SaveAs("./results/Bs/splot/sig/"+label+"sPlot_Bs.gif");
     prov->SaveAs("./results/Bs/splot/sig/"+label+"sPlot_Bs.pdf");
@@ -1460,8 +1385,8 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   histo_Bp_bkg->Draw("E");
 
   if(particle == 0){
-    prov_bkg->SaveAs("./results/B+/splot/bkg/"+label+"sPlot_B+.gif");
-    prov_bkg->SaveAs("./results/B+/splot/bkg/"+label+"sPlot_B+.pdf");
+    prov_bkg->SaveAs("./results/Bu/splot/bkg/"+label+"sPlot_Bu.gif");
+    prov_bkg->SaveAs("./results/Bu/splot/bkg/"+label+"sPlot_Bu.pdf");
   }else if(particle == 1){
     prov_bkg->SaveAs("./results/Bs/splot/bkg/"+label+"sPlot_Bs.gif");
     prov_bkg->SaveAs("./results/Bs/splot/bkg/"+label+"sPlot_Bs.pdf");
@@ -1488,8 +1413,8 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   legend->Draw();
 
   if(particle == 0){
-    sig_bkg->SaveAs("./results/B+/splot/sig_bkg/"+label+"sPlot_B+.gif");
-    sig_bkg->SaveAs("./results/B+/splot/sig_bkg/"+label+"sPlot_B+.pdf");
+    sig_bkg->SaveAs("./results/Bu/splot/sig_bkg/"+label+"sPlot_Bu.gif");
+    sig_bkg->SaveAs("./results/Bu/splot/sig_bkg/"+label+"sPlot_Bu.pdf");
   }else if(particle == 1){
     sig_bkg->SaveAs("./results/Bs/splot/sig_bkg/"+label+"sPlot_Bs.gif");
     sig_bkg->SaveAs("./results/Bs/splot/sig_bkg/"+label+"sPlot_Bs.pdf");
@@ -1501,7 +1426,6 @@ TH1D* make_splot(RooWorkspace& w, int n, TString label){
   delete prov_bkg;
   delete sig_bkg;
 
-  
   return histo_Bp_sig;
 
 } 
@@ -1521,44 +1445,77 @@ std::vector<TH1D*> splot_method(RooWorkspace& w, int* n, TString* label, int n_v
   return histos;
 }
 
-//splot_method ends
-
-void validate_fit(RooWorkspace* w)//vir aqui!
+void validate_fit(RooWorkspace* w)
 {
-  /*
+  
   RooRealVar Bmass = *(w->var("Bmass"));
-  RooRealVar n_signal = *(w->var("n_signal"));
-  RooAbsPdf& model  = *(w->pdf("model"));
+  RooAbsPdf* model  = w->pdf("model");
+
   vector<RooRealVar> params;
-  params.push_back(n_signal);
-  RooMCStudy* mcstudy = new RooMCStudy(model, Bmass, Binned(kTRUE), Silence(), Extended(), FitOptions(Save(kTRUE), PrintEvalErrors(0)));
-  mcstudy->generateAndFit(1000);
+  params.push_back(*(w->var("n_signal")));
+
+  int params_size = params.size();
+
+  RooMCStudy* mcstudy = new RooMCStudy(*model, Bmass, Binned(kTRUE), Silence(), Extended(), FitOptions(Save(kTRUE), PrintEvalErrors(0)));
+
+  mcstudy->generateAndFit(5000);
+
   vector<RooPlot*> framesPull, framesParam;
-  for(int i = 0; i < params.size(); ++i)
+
+  for(int i = 0; i < params_size; ++i)
     {
       framesPull.push_back(mcstudy->plotPull(params.at(i),FrameBins(200),FrameRange(-5,5)));
-      framesPull[i]-SetTitle("");
+      framesPull[i]->SetTitle("");
       framesParam.push_back(mcstudy->plotParam(params.at(i),FrameBins(50)));
       framesParam[i]->SetTitle("");
     }
-  vector<TGraph*> h;
-  for
-  gStyle->SetOptFit(0111);
-  TCanvas* c_pull = new TCanvas("pulls", "pulls", 900, 800);
-  gPad->SetLeftMargin(0.15);
-  c_pull->cd();
-  framePULL->SetTitle("");
-  framePULL->Draw();
-  c_pull->Update();
-  framePULL->Fit("gaus","","",-5,5);
-  framePULL->GetFunction("gaus")->SetLineColor(4);
-  framePULL->GetFunction("gaus")->SetLineWidth(5);
-  framePULL->GetXaxis()->SetTitle("Pull");
-  framePULL->Draw("same");
-  */
-}
 
-//validate_fit ends
+  vector<TGraph*> h;
+
+  for(int i = 0; i < params_size; ++i){
+    h.push_back(static_cast<TGraph*>(framesPull.at(i)->getObject(0)));
+  }
+
+  gStyle->SetOptFit(0111);
+
+  TCanvas* c_pull = new TCanvas("pulls", "pulls", 900, 800);
+
+  gPad->SetLeftMargin(0.15);
+
+  for(int i = 0; i < params_size; ++i){
+    c_pull->cd();
+    h[i]->SetTitle("");
+    h[i]->Draw();
+    c_pull->Update();
+    h[i]->Fit("gaus","","",-5,5);
+    h[i]->GetFunction("gaus")->SetLineColor(4);
+    h[i]->GetFunction("gaus")->SetLineWidth(5);
+    h[i]->GetXaxis()->SetTitle("Pull");
+    h[i]->GetYaxis()->SetTitle("Toy MCs");
+    h[i]->Draw("same");
+  }
+
+  TCanvas* c_params = new TCanvas("params", "params", 900, 800);
+
+  for(int i = 0; i < params_size; ++i){
+    c_params->cd();
+    framesParam.at(i)->GetYaxis()->SetTitleOffset(1.4);
+    framesParam.at(i)->Draw();
+  }
+
+  if(particle == 0){
+    c_pull->SaveAs("./results/Bu/pulls/pulls_poisson_Bu.pdf");
+    c_pull->SaveAs("./results/Bu/pulls/pulls_poisson_Bu.gif");
+    c_params->SaveAs("./results/Bu/pulls/pulls_params_poisson_Bu.pdf");
+    c_params->SaveAs("./results/Bu/pulls/pulls_params_poisson_Bu.gif");
+  }else if(particle == 1){
+    c_pull->SaveAs("./results/Bs/pulls/pulls_poisson_Bs.pdf");
+    c_pull->SaveAs("./results/Bs/pulls/pulls_poisson_Bs.gif");
+    c_params->SaveAs("./results/Bs/pulls/pulls_params_poisson_Bs.pdf");
+    c_params->SaveAs("./results/Bs/pulls/pulls_params_poisson_Bs.gif");
+  }
+  
+}
 
 void set_up_workspace_variables(RooWorkspace& w)
 {
@@ -1593,33 +1550,33 @@ void set_up_workspace_variables(RooWorkspace& w)
     mass_max=6.;
 
     pt_min=5.;
-    pt_max=100.;
+    pt_max= DATA_CUT ? 50. : 100.;
 
     y_min=-2.4;
     y_max=2.4;
 
-    trk1eta_min=-2.5;
-    trk1eta_max=2.5;
+    trk1eta_min= DATA_CUT ? -2.4 : -2.5;
+    trk1eta_max= DATA_CUT ? 2.4 : 2.5;
 
-    Btrk1YMin = -2.5;
-    Btrk1YMax = 2.5;
+    Btrk1YMin = DATA_CUT ? -2.4 : -2.5;
+    Btrk1YMax = DATA_CUT ? 2.4 : 2.5;
 
     trk1pt_min=0.;
     trk1pt_max = DATA_CUT ? 16.5 : 31.;
 
-    mu1eta_min=-2.5;
-    mu1eta_max=2.5;
+    mu1eta_min = DATA_CUT ? -2.4 : -2.5;
+    mu1eta_max = DATA_CUT ? 2.4 : 2.5;
 
-    Bmu2EtaMin = -2.6;
-    Bmu2EtaMax = 2.6;
+    Bmu2EtaMin = DATA_CUT ? -2.5 : -2.6;
+    Bmu2EtaMax = DATA_CUT ? 2.5 : 2.6;
 
-    mu1pt_min=0.;
+    mu1pt_min = 0.;
     mu1pt_max = DATA_CUT ? 38. : 82. ;
 
     Bmu2PtMin = 1.;
     Bmu2PtMax = 49.;
 
-    chi2cl_min = 0.;
+    chi2cl_min = 0.03;
     chi2cl_max = 1.05;
 
     svpvDistance_min=0.;
@@ -1632,7 +1589,7 @@ void set_up_workspace_variables(RooWorkspace& w)
     alpha_min=0.;
     alpha_max = DATA_CUT ? 0.1 : 3.2 ;
 
-    trk1Dz_min = DATA_CUT ? -1. : -10.;
+    trk1Dz_min = DATA_CUT ? -0.6 : -10.;
     trk1Dz_max = DATA_CUT ? 0.7 : 2.;
 
     BvtxXMin = DATA_CUT ? -0.6 : -0.85;
@@ -1644,8 +1601,8 @@ void set_up_workspace_variables(RooWorkspace& w)
     Btrk1DzError1Min = 0;
     Btrk1DzError1Max = DATA_CUT ? 0.14 : 1.25;
 
-    Btrk1Dxy1Min = DATA_CUT ? -0.3 : -0.45;
-    Btrk1Dxy1Max = DATA_CUT ? 0.3 : 0.6;
+    Btrk1Dxy1Min = DATA_CUT ? -0.28 : -0.45;
+    Btrk1Dxy1Max = DATA_CUT ? 0.28 : 0.6;
 
     Btrk1DxyErr1Min = 0;
     Btrk1DxyErr1Max = DATA_CUT ? 0.0125 : 0.22;
@@ -1702,7 +1659,6 @@ void set_up_workspace_variables(RooWorkspace& w)
     w.import(Btrk1DxyError1);
     w.import(Bd0);
     w.import(Bd0err);
-
   }
     
   
@@ -1732,64 +1688,64 @@ void set_up_workspace_variables(RooWorkspace& w)
     mass_min= 5.;
     mass_max= 6.; 
 
-    pt_min=5.;
+    pt_min= 5.;
     pt_max= DATA_CUT ? 30. : 50.;
 
     y_min=-2.4;
-    y_max=2.4;
+    y_max= DATA_CUT ? 2.3 : 2.4;
 
-    trk1eta_min=-2.5;
-    trk1eta_max=2.5;
+    trk1eta_min= DATA_CUT ? -2.4 : -2.5;
+    trk1eta_max= DATA_CUT ? 2.4 : 2.5;
 
-    trk2eta_min = -2.5;
-    trk2eta_max = 2.5;
+    trk2eta_min = DATA_CUT ? -2.4 : -2.5;
+    trk2eta_max = DATA_CUT ? 2.4 : 2.5;
 
-    trk1pt_min = 0.5;
+    trk1pt_min = DATA_CUT ? 0.75 : 0.5;
     trk1pt_max = DATA_CUT ? 8. : 15;
 
-    trk2pt_min = 0.5;
+    trk2pt_min = DATA_CUT ? 0.75 : 0.5;
     trk2pt_max = DATA_CUT ? 8. : 15;
 
-    mu1eta_min=-2.5;
-    mu1eta_max=2.5;
+    mu1eta_min = DATA_CUT ? -2.4 : -2.5;
+    mu1eta_max = DATA_CUT ? 2.4 : 2.5;
 
-    mu2eta_min = -2.5;
-    mu2eta_max = 2.5;
+    mu2eta_min = DATA_CUT ? -2.4 : -2.5;
+    mu2eta_max = DATA_CUT ? 2.4 : 2.5;
 
     mu1pt_min=2.;
     mu1pt_max= DATA_CUT ? 12. : 28;
 
-    mu2pt_min = 1.;
+    mu2pt_min = DATA_CUT ? 1.8 : 1.;
     mu2pt_max = DATA_CUT ? 13. : 30;
 
-    chi2cl_min = 0.;
+    chi2cl_min = DATA_CUT ? 0.04 : 0.;
     chi2cl_max = 1.;
 
-    mumumass_min = DATA_CUT ? 2.98 : 2.95;
+    mumumass_min = DATA_CUT ? 2.995 : 2.95;
     mumumass_max = DATA_CUT ? 3.2 : 3.22;
      
     trktrkmass_min = 1.005;
-    trktrkmass_max = 1.035;
+    trktrkmass_max = DATA_CUT ? 1.0345 : 1.035;
 
     svpvDistance_min=0.;
     svpvDistance_max=DATA_CUT ? 1. : 4.;
 
-    svpvDistanceErr_min=0.;
+    svpvDistanceErr_min= DATA_CUT ? 0.0025 : 0.;
     svpvDistanceErr_max=DATA_CUT ? 0.041 : 0.06;
 
     alpha_min=0.;
     alpha_max=DATA_CUT ? 0.1 : 0.5;
 
-    BDT_5_10_min = -0.14;
-    BDT_5_10_max = 0.62;
+    BDT_5_10_min = DATA_CUT ? -0.11 : -0.14;
+    BDT_5_10_max = DATA_CUT ? 0.61: 0.62;
 
     BDT_10_15_min = DATA_CUT ? 0.1 : 0;
     BDT_10_15_max = DATA_CUT ? 0.46 : 0.5;
 
-    BDT_15_20_min = DATA_CUT ? 0.1 : 0.05;
+    BDT_15_20_min = DATA_CUT ? 0.16 : 0.05;
     BDT_15_20_max = DATA_CUT ? 0.48 : 0.50;
 
-    BDT_20_50_min = 0.1;
+    BDT_20_50_min = DATA_CUT ? 0.2 : 0.1;
     BDT_20_50_max = 0.50;
 
     RooRealVar Bmass("Bmass","Bmass",mass_min,mass_max);
@@ -1837,7 +1793,3 @@ void set_up_workspace_variables(RooWorkspace& w)
     w.import(BDT_pt_20_50);
   }
 }
-
-//set_up_workspace_variables ends
-
-//END
