@@ -1,22 +1,161 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1F.h>
+#include <TCanvas.h>
+#include <TLegend.h>
+#include <TEfficiency.h>
+#include <iostream>
+
+using namespace std;
+
+double read_weights(TString var, double var_value);
+double getWeight(double var_value, TH1D* h_weight);
+TEfficiency* getEfficiency(double* pt_bins, int n_pt_bins, TString input_cuts, TString input_nocuts, bool weights);
 
 int main(){
+  //int counter(){
 
-  TFile* f_mc = new TFile("/lstore/cms/julia/corrected_samples/NewMCBPlus.root");
-  //a
-  TTree* t1 = (TTree*)f_mc->Get("Bfinder/ntKp");
-  t1->AddFriend("skimanalysis/HltTree");
-  t1->AddFriend("hiEvtAnalyzer/HiTree");
-
-  TH1F* hist_data = new TH1F("By_total", "By", 100, -2.6, 2.6);
-  TH1F* hist_cut = new TH1F("By_cut", "By", 100, -2.6, 2.6);
+  TString input_cuts = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
+  TString input_nocuts = "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test_train_nocuts.root";
   
-c  t1->Project("By_total", "By", "pthatweight");
-  hist_data->SetTitle("Total By");
+  double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+  double n_pt_bins = 7;
   
-  t1->Project("By_cut", "By", "pthatweight*((pprimaryVertexFilter && phfCoincFilter2Th4 && pclusterCompatibilityFilter && Btrk1Pt>0.9 && Bpt>5.0 && (BsvpvDistance/BsvpvDisErr)>2.0 && Bchi2cl>0.05 && TMath::Abs(Btrk1Eta)<2.4 && TMath::Abs(By)<2.4 && TMath::Abs(PVz)<15 && Bmass>5 && Bmass<6 && TMath::Abs(Bmumumass-3.096900)<0.15 && Bmu1SoftMuID && Bmu2SoftMuID && ((TMath::Abs(Bmu1eta)<1.2 && Bmu1pt>3.5) || (TMath::Abs(Bmu1eta)>1.2 && TMath::Abs(Bmu1eta)<2.1 && Bmu1pt>5.47-1.89*TMath::Abs(Bmu1eta)) || (TMath::Abs(Bmu1eta)>2.1 && TMath::Abs(Bmu1eta)<2.4 && Bmu1pt>1.5)) && ((TMath::Abs(Bmu2eta)<1.2 && Bmu2pt>3.5) || (TMath::Abs(Bmu2eta)>1.2 && TMath::Abs(Bmu2eta)<2.1 && Bmu2pt>5.47-1.89*TMath::Abs(Bmu2eta)) || (TMath::Abs(Bmu2eta)>2.1 && TMath::Abs(Bmu2eta)<2.4 && Bmu2pt>1.5)) && Bmu1isTriggered && Bmu2isTriggered && (Btrk1PixelHit+Btrk1StripHit)>=11 && (Btrk1Chi2ndf/(Btrk1nStripLayer+Btrk1nPixelLayer))<0.18 && TMath::Abs(Btrk1PtErr/Btrk1Pt)<0.1)&&((Bpt>5 && Bpt<7 && (BsvpvDistance/BsvpvDisErr)>16.457 && cos(Bdtheta)>0.987 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>0.005 && Btrk1Pt>1.092 && Bchi2cl>0.065) || (Bpt>7 && Bpt<10 && (BsvpvDistance/BsvpvDisErr)>12.714 && cos(Bdtheta)>0.947 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>2.928 && Btrk1Pt>0.838 && Bchi2cl>0.053) || (Bpt>10 && Bpt<15 && (BsvpvDistance/BsvpvDisErr)>9.086 && cos(Bdtheta)>0.994 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>1.540 && Btrk1Pt>1.262 && Bchi2cl>0.055) || (Bpt>15 && Bpt<20 && (BsvpvDistance/BsvpvDisErr)>7.587 && cos(Bdtheta)>0.757 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>0.000 && Btrk1Pt>1.813 && Bchi2cl>0.056) || (Bpt>20 && Bpt<30 && (BsvpvDistance/BsvpvDisErr)>4.004 && cos(Bdtheta)>0.996 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>0.000 && Btrk1Pt>1.822 && Bchi2cl>0.050) || (Bpt>30 && Bpt<50 && (BsvpvDistance/BsvpvDisErr)>2.000 && cos(Bdtheta)>0.998 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>0.000 && Btrk1Pt>2.046 && Bchi2cl>0.050) || (Bpt>50 && Bpt<100 && (BsvpvDistance/BsvpvDisErr)>4.084 && cos(Bdtheta)>-0.112 && TMath::Abs(Btrk1Dxy1/Btrk1DxyError1)>0.000 && Btrk1Pt>1.645 && Bchi2cl>0.050)))");
-  hist_cut->SetTitle("By after cuts");
+  TEfficiency* efficiency0 = getEfficiency(pt_bins, n_pt_bins, input_cuts, input_nocuts, 0);
+  TEfficiency* efficiency1 = getEfficiency(pt_bins, n_pt_bins, input_cuts, input_nocuts, 1);
 
+  
+  for(int i = 1; i < 8; i++)
+    {
+      cout << efficiency0->GetEfficiency(i) << endl;
+    }
+
+  cout << endl;
+
+  for(int i = 1; i < 8; i++)
+    {
+      cout << efficiency1->GetEfficiency(i) << endl;
+    }
+  
+  return 0;
+  
+}
+
+TEfficiency* getEfficiency(double* pt_bins, int n_pt_bins, TString input_cuts, TString input_nocuts, bool weights){
+
+  TFile* f_mc_cuts = new TFile(input_cuts);
+  TTree* t_cuts = (TTree*)f_mc_cuts->Get("ntKp");
+
+  TFile* f_mc_nocuts = new TFile(input_nocuts);
+  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp");
+
+  TH1F* hist_passed = new TH1F("hist_passed", "hist_passed", n_pt_bins, pt_bins);
+  TH1F* hist_tot = new TH1F("hist_tot", "hist_tot", n_pt_bins, pt_bins);
+
+  float bpt1;
+  t_cuts->SetBranchAddress("Bpt", &bpt1);
+  double weight;
+
+  for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
+    {
+      t_cuts->GetEntry(evt);
+      if(weights){
+	weight = read_weights("Bpt", bpt1);
+	hist_passed->Fill(bpt1, weight);
+      }else{
+	hist_passed->Fill(bpt1);
+      }
+    }
+
+  if(weights){
+    TCanvas passed_weights;
+    hist_passed->Draw();
+    passed_weights.SaveAs("./bin/results/efficiency_test/passed_weights.pdf");
+  }else{
+    TCanvas passed_noweights;
+    hist_passed->Draw();
+    passed_noweights.SaveAs("./bin/results/efficiency_test/passed_noweights.pdf");
+  }
+
+  float bpt2;
+  t_nocuts->SetBranchAddress("Bpt", &bpt2);
+
+  for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
+    {
+      t_nocuts->GetEntry(evt);
+      if(weights){
+	weight = read_weights("Bpt", bpt2);
+	hist_tot->Fill(bpt2, weight);
+      }else{
+	hist_tot->Fill(bpt2);
+      }
+    }
+
+  if(weights){
+    TCanvas total_weights;
+    hist_tot->Draw();
+    total_weights.SaveAs("./bin/results/efficiency_test/total_weights.pdf");
+  }else{
+    TCanvas total_noweights;
+    hist_tot->Draw();
+    total_noweights.SaveAs("./bin/results/efficiency_test/total_noweights.pdf");
+  }
+
+  TEfficiency* efficiency = new TEfficiency(*hist_passed, *hist_tot);
+
+  TCanvas c1;
+  efficiency->Draw("AP");
+  if(weights){
+    c1.SaveAs("./bin/results/efficiency_test/efficiency1.pdf");
+  }else{
+    c1.SaveAs("./bin/results/efficiency_test/efficiency0.pdf");
+  }
+
+  f_mc_nocuts->Close();
+  f_mc_cuts->Close();
+  delete f_mc_nocuts;
+  delete f_mc_cuts;
+  
+  return efficiency;
+}
+
+double read_weights(TString variable, double var_value){
+  
+  TString input_file = "./bin/results/B+/mc_validation_plots/weights/weights.root";
+
+  TFile* f_wei = new TFile(input_file, "read");
+
+  TH1D* histo_variable = (TH1D*)f_wei->Get(Form("weights_"+variable));
+
+  double weight;
+  double variable_min;
+  double variable_max;
+
+  variable_min = histo_variable->GetXaxis()->GetXmin();
+  variable_max = histo_variable->GetXaxis()->GetXmax();  
+
+  //testing
+  //cout<<"min:"<<variable_min<<endl;
+  //cout<<"max:"<<variable_max<<endl;
+  
+  //if the event is not in the range its weight is 1.
+  
+  if(var_value>=variable_min && var_value<=variable_max){  
+    weight = getWeight(var_value,histo_variable);
+  }
+  else{
+    weight = 1;
+  }
+
+  f_wei->Close();
+  delete f_wei;
+
+  return weight;
+}
+
+//definição da fc auxiliar
+
+double getWeight(double var_value, TH1D* h_weight){
+  int bin = h_weight->FindBin(var_value);
+  return h_weight->GetBinContent(bin);
 }

@@ -82,7 +82,7 @@ void pT_analysis(RooWorkspace& w,int n, TString);
 // 0 = B+
 // 1 = Bs
 
-#define particle 1
+#define particle 0
 
 int main(){
   
