@@ -59,27 +59,30 @@ int main(int argc, char *argv[]){
   TString input_file_pp = "/lstore/cms/julia/pp_files/ntB_EvtBase_20160420_BfinderData_pp_20160419_bPt0jpsiPt0tkPt0p5.root";
   TString output_file_pp= "/exper-sw/cmst3/cmssw/users/julia/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/selected_data/selected_data_" + channel_to_ntuple_name(channel) + "_pp.root";
   //TString input_file_PbPb = "/lstore/cms/julia/crab_Bfinder_20181220_HIDoubleMuon_HIRun2018A_PromptReco_v1v2_1031_NoJSON_skimhltBsize_ntKp.root";
-  TString output_file_PbPb= "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_data_" + channel_to_ntuple_name(channel) + "_PbPb_2018_corrected_test_train.root";
+
+  TString output_file_PbPb= "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees_3/selected_data_" + channel_to_ntuple_name(channel) + "_PbPb_2018_corrected_test_train.root";
+
   TString output_file_pp_mc= "/exper-sw/cmst3/cmssw/users/julia/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/mc_for_central_code/selected_mc_ntphi_pp.root";
   TString input_file_pp_mc = "/lstore/cms/julia/pp_files/loop_Bs0_pthat5_bstojpsiphi_pp.root";
 
 
-  TString output_file_PbPb_mc= "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees_2/selected_mc_" + channel_to_ntuple_name(channel) + "_PbPb_2018_corrected_nocuts_BDT.root";
+  TString output_file_PbPb_mc= "/home/t3cms/ev19u032/test/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/prefiltered_trees_3/selected_mc_" + channel_to_ntuple_name(channel) + "_PbPb_2018_corrected_nocuts_BDT.root";
+
 //  TString input_file_PbPb_mc = "/lstore/cms/julia/crab_Bfinder_20190221_Pythia8_BuToJpsiK_Bpt0p0_1032_NoJSON_pthatweight_hardcut_v2.root";
   std::cout<<"channel= "<<channel<<std::endl;
   TString input_file_PbPb;
   TString input_file_PbPb_mc;
   switch (channel) {
       default: 
-        input_file_PbPb = "/lstore/cms/julia/corrected_samples/Data_Bs_PbPb_TMVA_BDT_PbPb.root";
-        input_file_PbPb_mc  = "/lstore/cms/julia/after_training_check/MC_Bs_PbPb_TMVA_BDT_PbPb.root";
-      case 1:
-        input_file_PbPb = "root /lstore/cms/julia/after_training_check/crab_Bfinder_20190513_HIDoubleMuon__PsiPeri__HIRun2018A_04Apr2019_v1_1033p1_GoldenJSON_skimhltBsize_ntKp_BDT.root ";
-        input_file_PbPb_mc = "/lstore/cms/julia/after_training_check/crab_Bfinder_20190624_Hydjet_Pythia8_Official_BuToJpsiK_1033p1_pt3tkpt0p7dls2_allpthat_pthatweight_BDT.root";
+        input_file_PbPb = "/lstore/cms/julia/most_updated_samples/Data_Bs_PbPb_TMVA_BDT_PbPb.root";
+        input_file_PbPb_mc  = "/lstore/cms/julia/most_updated_samples/MC_Bs_PbPb_TMVA_BDT_PbPb.root";
+  case 1: //Bu
+        input_file_PbPb = "/lstore/cms/julia/most_updated_samples/crab_Bfinder_20190513_HIDoubleMuon__PsiPeri__HIRun2018A_04Apr2019_v1_1033p1_GoldenJSON_skimhltBsize_ntKp_BDT.root";
+        input_file_PbPb_mc = "/lstore/cms/julia/most_updated_samples/crab_Bfinder_20190624_Hydjet_Pythia8_Official_BuToJpsiK_1033p1_pt3tkpt0p7dls2_allpthat_pthatweight_BDT.root";
         break;
-      case 4:
-        input_file_PbPb = "/lstore/cms/julia/corrected_samples/Data_Bs_PbPb_TMVA_BDT_PbPb.root ";
-        input_file_PbPb_mc  = "/lstore/cms/julia/after_training_check/MC_Bs_PbPb_TMVA_BDT_PbPb.root";
+  case 4: //Bs
+        input_file_PbPb = "/lstore/cms/julia/most_updated_samples/Data_Bs_PbPb_TMVA_BDT_PbPb.root";
+        input_file_PbPb_mc  = "/lstore/cms/julia/most_updated_samples/MC_Bs_PbPb_TMVA_BDT_PbPb.root";
         break;
   }  
 
@@ -99,6 +102,7 @@ int main(int argc, char *argv[]){
   if(collisionsystem=="PbPb" && mc==1){
     std::cout<<"Selecting mc from PbPb collisions"<<std::endl;
     data_selection(input_file_PbPb_mc,output_file_PbPb_mc, 2, 1, channel);
+    cout<<"channel"<<channel<<endl;
   }
   
 }
@@ -371,7 +375,7 @@ void data_selection(TString fin1, TString data_selection_output_file, int csyst,
 	  variable.Form("BDT_%g_%g", pt_bins_bu[kk], pt_bins_bu[kk+1]);
 	  pass_bdt = bdt_total > bdt_threshold_bu[kk] ? 1 : 0;
 	  //BDT weight
-	  cout<<bdt_total;
+	  //cout<<bdt_total;
 	  //weight_bdt_total_tmp = read_weights(variable, bdt_total, 1);//Bu
 	}
 
@@ -435,17 +439,17 @@ void data_selection(TString fin1, TString data_selection_output_file, int csyst,
 	  variable.Form("BDT_pt_%g_%g", pt_bins_bs[kk], pt_bins_bs[kk+1]);
 	  pass_bdt = bdt_total > bdt_threshold_bs[kk] ? 1 : 0;
 	  //BDT weight
-	  weight_bdt_total_tmp = read_weights(variable, bdt_total, 4);//Bs
+	  // weight_bdt_total_tmp = read_weights(variable, bdt_total, 4);//Bs
 	}
-	cout << "weight_bdt_total: " << weight_bdt_total << endl;
+	//cout << "weight_bdt_total: " << weight_bdt_total << endl;
 
 	//cout << "pwd antes: ";
 	//gDirectory->pwd();
 
-	cout << " file name " << data_selection_output_file <<endl;
+	//cout << " file name " << data_selection_output_file <<endl;
 
 	gDirectory->cd(data_selection_output_file+":/");
-	cout << "pwd depois: ";
+	//cout << "pwd depois: ";
 	gDirectory->pwd();
 	weight_bdt_total =  weight_bdt_total_tmp;
 
@@ -509,21 +513,16 @@ double read_weights(TString variable, double var_value, int ch){
 
   TFile* f_wei = new TFile(input_file, "read");
 
-  
-
   TH1D* histo_variable = (TH1D*)f_wei->Get(Form("weights_"+variable));
-  
 
   double weight;
   double variable_min;
   double variable_max;
 
-
-
   variable_min = histo_variable->GetXaxis()->GetXmin();
-  cout<<variable_min;
+  //  cout<<variable_min;
   variable_max = histo_variable->GetXaxis()->GetXmax();  
-  cout<<"variable_max: "<<variable_max<<endl;
+  //cout<<"variable_max: "<<variable_max<<endl;
   
   //if the event is not in the range its weight is 1.
   if(var_value>=variable_min && var_value<=variable_max){  
@@ -534,7 +533,7 @@ double read_weights(TString variable, double var_value, int ch){
   }
 
   f_wei->Close();
-  cout << "weight: " << weight << endl;
+  //  cout << "weight: " << weight << endl;
   return weight;
 }
 
