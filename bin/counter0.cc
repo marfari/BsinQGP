@@ -4,17 +4,26 @@
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TEfficiency.h>
+#include <TString.h>
 #include <iostream>
+
 
 using namespace std;
 
 double read_weights(TString var, double var_value);
 double getWeight(double var_value, TH1D* h_weight);
 
+#define particle 0; //0 = B+;   1 = Bs;
+
 int main(){
   //int counter(){
 
-  TFile* f_mc_nocuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test_train_nocuts.root");
+  //TString input_nocuts = particle ? "./prefiltered_trees_2/selected_mc_ntphi_PbPb_2018_corrected_nocuts_BDT.root" : "./prefiltered_trees_2/selected_mc_ntKp_PbPb_2018_corrected_nocuts_BDT.root";
+  //TString input_cuts = particle ? "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntphi_PbPb_2018_corrected_test_new.root" : "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root";
+
+  //TString input_t = particle ? "ntphi" : "ntKp";
+
+  TFile* f_mc_nocuts = new TFile("./prefiltered_trees_2/selected_mc_ntKp_PbPb_2018_corrected_nocuts_BDT.root");
   TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp");
 
   TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root");
