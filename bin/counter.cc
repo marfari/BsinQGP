@@ -21,20 +21,19 @@ int main(){
   double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
   double n_pt_bins = 7;
   
-  TEfficiency* efficiency0 = getEfficiency(pt_bins, n_pt_bins, input_cuts, input_nocuts, 0);
-  TEfficiency* efficiency1 = getEfficiency(pt_bins, n_pt_bins, input_cuts, input_nocuts, 1);
-
+  TEfficiency* efficiency0 = getEfficiency(pt_bins, n_pt_bins, input_cuts, input_nocuts, false);
+  TEfficiency* efficiency1 = getEfficiency(pt_bins, n_pt_bins, input_cuts, input_nocuts, true);
   
-  for(int i = 1; i < 8; i++)
+  for(int i = 0; i < n_pt_bins; i++)
     {
-      cout << efficiency0->GetEfficiency(i) << endl;
+      cout << efficiency0->GetEfficiency(i+1) << endl;
     }
 
   cout << endl;
 
-  for(int i = 1; i < 8; i++)
+  for(int i = 0; i < n_pt_bins; i++)
     {
-      cout << efficiency1->GetEfficiency(i) << endl;
+      cout << efficiency1->GetEfficiency(i+1) << endl;
     }
   
   return 0;
@@ -56,7 +55,7 @@ TEfficiency* getEfficiency(double* pt_bins, int n_pt_bins, TString input_cuts, T
   t_cuts->SetBranchAddress("Bpt", &bpt1);
   double weight;
 
-  for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
+  for(int evt = 0; evt < 500; evt++)
     {
       t_cuts->GetEntry(evt);
       if(weights){
@@ -80,7 +79,7 @@ TEfficiency* getEfficiency(double* pt_bins, int n_pt_bins, TString input_cuts, T
   float bpt2;
   t_nocuts->SetBranchAddress("Bpt", &bpt2);
 
-  for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
+  for(int evt = 0; evt < 500; evt++)
     {
       t_nocuts->GetEntry(evt);
       if(weights){
