@@ -56,6 +56,8 @@
 #include <iostream>
 #include <TF1.h>
 #include <RooPolynomial.h>
+#include <TEfficiency.h>
+#include <TGraphErrors.h>
 #include <fstream>
 using namespace RooStats;
 using namespace RooFit;
@@ -76,6 +78,9 @@ void validate_fit(RooWorkspace* w);
 void get_ratio( std::vector<TH1D*>,  std::vector<TH1D*>,  std::vector<TString>, TString);
 void pT_analysis(RooWorkspace& w,int n, TString);
 //void fit_syst_error(TString);
+void eff_syst();
+void significance(RooWorkspace* w);
+
 
 // DATA_CUT
 // 1 = apply cuts, recd ..strict variable range when reading data -- to be used for mc validation
@@ -132,9 +137,14 @@ int main(){
   // plot_complete_fit(*ws);
   // }
 
-  plot_complete_fit(*ws);
 
-  //validate_fit(ws);
+  //significance(ws);   ----> Doesn't run
+
+  validate_fit(ws);
+
+  return 0;
+
+  plot_complete_fit(*ws);
 
   // if(!DATA_CUT){fit_syst_error(input_file_data);}
 
@@ -383,6 +393,8 @@ int main(){
   }
 
   //comparisons end
+
+  eff_syst();
 
 }
 
@@ -801,8 +813,10 @@ void build_pdf(RooWorkspace& w) {
 
   if(particle == 0){
     RooAddPdf model("model", "model", RooArgList(signal,fit_side,erf,jpsipi),RooArgList(n_signal,n_combinatorial,n_erf,n_jpsipi));
+    RooAddPdf background("bkg", "bkg", RooArgList(fit_side,erf,jpsipi),RooArgList(n_combinatorial,n_erf,n_jpsipi));
     model.fitTo(*data,Range("all"));
     w.import(model);
+    w.import(background);
   }else if(particle == 1){
     RooAddPdf model("model", "model", RooArgList(signal,fit_side), RooArgList(n_signal, n_combinatorial)); 
     model.fitTo(*data,Range("all"));
@@ -1451,30 +1465,40 @@ void validate_fit(RooWorkspace* w)
   
   RooRealVar Bmass = *(w->var("Bmass"));
   RooAbsPdf* model  = w->pdf("model");
+  RooDataSet* data = (RooDataSet*) w->data("data");
+
+  model->fitTo(*data);
 
   vector<RooRealVar> params;
   params.push_back(*(w->var("n_signal")));
+
+  double n_signal_init = params[0].getVal();
 
   int params_size = params.size();
 
   RooMCStudy* mcstudy = new RooMCStudy(*model, Bmass, Binned(kTRUE), Silence(), Extended(), FitOptions(Save(kTRUE), PrintEvalErrors(0)));
 
-  mcstudy->generateAndFit(5000);
+  mcstudy->generateAndFit(1000);
 
-  vector<RooPlot*> framesPull, framesParam;
+  vector<RooPlot*> framesPull, framesParam, framesError;
 
   for(int i = 0; i < params_size; ++i)
     {
       framesPull.push_back(mcstudy->plotPull(params.at(i),FrameBins(200),FrameRange(-5,5)));
       framesPull[i]->SetTitle("");
-      framesParam.push_back(mcstudy->plotParam(params.at(i),FrameBins(50)));
+      framesParam.push_back(mcstudy->plotParam(params.at(i),FrameBins(200)));
       framesParam[i]->SetTitle("");
+      framesError.push_back(mcstudy->plotError(params.at(i),FrameBins(50)));
+      framesError[i]->SetTitle("");
     }
 
-  vector<TGraph*> h;
+  vector<TGraph*> h1;
+  vector<TGraph*> h2;
 
   for(int i = 0; i < params_size; ++i){
-    h.push_back(static_cast<TGraph*>(framesPull.at(i)->getObject(0)));
+    h1.push_back(static_cast<TGraph*>(framesPull.at(i)->getObject(0)));
+    h2.push_back(static_cast<TGraph*>(framesParam.at(i)->getObject(0)));
+
   }
 
   gStyle->SetOptFit(0111);
@@ -1485,37 +1509,174 @@ void validate_fit(RooWorkspace* w)
 
   for(int i = 0; i < params_size; ++i){
     c_pull->cd();
-    h[i]->SetTitle("");
-    h[i]->Draw();
+    h1[i]->SetTitle("");
+    h1[i]->Draw();
     c_pull->Update();
-    h[i]->Fit("gaus","","",-5,5);
-    h[i]->GetFunction("gaus")->SetLineColor(4);
-    h[i]->GetFunction("gaus")->SetLineWidth(5);
-    h[i]->GetXaxis()->SetTitle("Pull");
-    h[i]->GetYaxis()->SetTitle("Toy MCs");
-    h[i]->Draw("same");
+    h1[i]->Fit("gaus","","",-5,5);
+    h1[i]->GetFunction("gaus")->SetLineColor(4);
+    h1[i]->GetFunction("gaus")->SetLineWidth(5);
+    h1[i]->GetXaxis()->SetTitle("Pull");
+    h1[i]->GetYaxis()->SetTitle("Toy MCs");
+    h1[i]->Draw("same");
   }
 
+  /*  
   TCanvas* c_params = new TCanvas("params", "params", 900, 800);
 
   for(int i = 0; i < params_size; ++i){
     c_params->cd();
+    framesParam.at(i)->GetYaxis()->SetTitle("Toy MCs");
     framesParam.at(i)->GetYaxis()->SetTitleOffset(1.4);
     framesParam.at(i)->Draw();
   }
+  */
+  
+  
+  TCanvas* c_params = new TCanvas("params", "params", 900, 800);
+ 
+  for(int i = 0; i < params_size; ++i){
+    c_params->cd();
+    h2[i]->SetTitle("");
+    h2[i]->Draw();
+    c_params->Update();
+    if(particle == 0){h2[i]->Fit("gaus","","",900,1100);}
+    else if(particle == 1){h2[i]->Fit("gaus","","",40, 80);}
+    h2[i]->GetFunction("gaus")->SetLineColor(4);
+    h2[i]->GetFunction("gaus")->SetLineWidth(5);
+    h2[i]->GetXaxis()->SetTitle("Mean");
+    h2[i]->GetYaxis()->SetTitle("Toy MCs");
+    h2[i]->Draw("same");
+  }
+
+  cout << "N_signal initial value: " << n_signal_init << endl;
+
+  /*
+  TCanvas* c_errors = new TCanvas("errors", "errors", 900, 800);
+
+  gPad->SetLeftMargin(0.15);
+
+  for(int i = 0; i < params_size; ++i){
+    c_errors->cd();
+    h3[i]->SetTitle("");
+    h3[i]->Draw();
+    c_errors->Update();
+    h3[i]->Fit("gaus","","",-5,5);
+    h3[i]->GetFunction("gaus")->SetLineColor(4);
+    h3[i]->GetFunction("gaus")->SetLineWidth(5);
+    h3[i]->GetXaxis()->SetTitle("Errors");
+    h3[i]->GetYaxis()->SetTitle("Toy MCs");
+    h3[i]->Draw("same");
+  }
+  */
 
   if(particle == 0){
     c_pull->SaveAs("./results/Bu/pulls/pulls_poisson_Bu.pdf");
     c_pull->SaveAs("./results/Bu/pulls/pulls_poisson_Bu.gif");
     c_params->SaveAs("./results/Bu/pulls/pulls_params_poisson_Bu.pdf");
     c_params->SaveAs("./results/Bu/pulls/pulls_params_poisson_Bu.gif");
+    //c_errors->SaveAs("./results/Bu/pulls/pulls_error.pdf");
+    //c_errors->SaveAs("./results/Bu/pulls/pulls_error.gif");
   }else if(particle == 1){
     c_pull->SaveAs("./results/Bs/pulls/pulls_poisson_Bs.pdf");
     c_pull->SaveAs("./results/Bs/pulls/pulls_poisson_Bs.gif");
     c_params->SaveAs("./results/Bs/pulls/pulls_params_poisson_Bs.pdf");
     c_params->SaveAs("./results/Bs/pulls/pulls_params_poisson_Bs.gif");
+    //c_errors->SaveAs("./results/Bs/pulls/pulls_error.pdf");
+    //c_errors->SaveAs("./results/Bs/pulls/pulls_error.gif");
   }
   
+}
+
+void eff_syst(){
+
+  TFile* f_eff0 = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files/efficiency0.root");
+  TFile* f_eff1 = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files/efficiency1.root");
+
+  double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+
+  TEfficiency* efficiency0 = new TEfficiency("efficiency0", "efficiency0", 7, pt_bins);
+  TEfficiency* efficiency1 = new TEfficiency("efficiency1", "efficiency1", 7, pt_bins);
+  efficiency0 = (TEfficiency*)f_eff0->Get("hist_tot_noweights_clone");
+  efficiency1 = (TEfficiency*)f_eff1->Get("hist_tot_weights_clone");
+
+  double eff0;
+  double eff1;
+  double syst;
+
+  double y_values[7];
+  double x_values[] = {6, 8.5, 12.5, 17.5, 25, 40, 75};
+
+  double x_errors[] = {1, 1.5, 2.5, 2.5, 5, 10, 25};
+  double y_errors[] = {0, 0, 0, 0, 0, 0, 0};
+
+  for(int i = 0; i < 7; i++)
+    {
+      eff0 = efficiency0->GetEfficiency(i + 1);
+      eff1 = efficiency1->GetEfficiency(i + 1);
+      syst = (eff1 - eff0) / eff0;
+      y_values[i] = syst;
+    }
+
+  TGraphErrors* systematic_errors = new TGraphErrors(7, x_values, y_values, x_errors, y_errors);
+
+  TFile* f1 = new TFile("./bin/results/Bu/efficiency/root_files/efficiency_systematic_errors.root", "recreate");
+  f1->cd();
+  systematic_errors->Write();
+  f1->Write();
+  f1->ls();
+  f1->Close();
+
+}
+
+//significance not running
+void significance(RooWorkspace* w){
+  
+  cout << "teste" << endl;
+  RooDataSet* data = (RooDataSet*) w->data("data");
+  cout << "teste" << endl;
+
+  RooAbsPdf* model  = w->pdf("model");  
+  RooRealVar Bmass = *(w->var("Bmass"));
+  RooAbsPdf* background  = w->pdf("bkg");
+  
+  // fit s+b
+  RooFitResult* fitres_sb = model->fitTo(*data,Save(), Minos() , Extended(kTRUE));
+  RooAbsReal* nll_sb = model->createNLL(*data);
+  double logl_sb = nll_sb->getVal();
+  cout << "nll sb" << logl_sb << endl;
+
+
+  RooRealVar* sinal = (RooRealVar*)fitres_sb->floatParsFinal().find("n_signal");
+
+  cout << "test \n";
+  // fit b only (s+b model with nsig=0)
+  
+  cout << "test \n";
+  sinal->setVal(0.);
+  cout << "test \n";
+  sinal->setConstant();
+  model->fitTo(*data,Save());
+  cout << "test \n";
+  RooAbsReal* nll_b0 = model->createNLL(*data);
+  double logl_b0 = nll_b0->getVal();
+  cout << "nll b0" << logl_b0 << endl;
+  cout << "test \n";
+
+  // fit b only (backgrund model)
+  background->fitTo(*data,Save());
+  RooAbsReal* nll_b1 = background->createNLL(*data);
+  double logl_b1= nll_b1->getVal();
+  cout << "nll b0" << logl_b1 << endl;
+  cout << "test \n";
+  double signif0 = sqrt(2*(-logl_sb+logl_b0));
+  double signif1 = sqrt(2*(-logl_sb+logl_b1));
+  cout << "test \n";
+  cout << "nll b0" << logl_b0 << endl;
+  cout << "Significance0: " << signif0 << endl;
+
+  cout << "nll b0" << logl_b1 << endl;
+  cout << "Significance1: " << signif1 << endl;
+
 }
 
 void set_up_workspace_variables(RooWorkspace& w)
