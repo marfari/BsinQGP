@@ -7,7 +7,6 @@
 #include <TString.h>
 #include <iostream>
 
-
 using namespace std;
 
 double read_weights(TString var, double var_value);
@@ -17,19 +16,35 @@ double getWeight(double var_value, TH1D* h_weight);
 
 int main(){
 
+  //File for Bpt
+  //TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_BDT.root");
+  //TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root");
 
-  TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root");
-  //TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_new_train_BDT.root");
-  TTree* t_cuts = (TTree*)f_mc_cuts->Get("ntKp");
-
-  TFile* f_mc_nocuts = new TFile("./bin/prefiltered_trees_2/selected_mc_ntKp_PbPb_2018_corrected_nocuts_BDT.root");
-  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp");
+  //File for Bs
+  TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntphi_PbPb_2018_new_train_BDT.root");
 
   //TFile* f_mc_cuts = new TFile("/lstore/cms/julia/most_updated_samples/crab_Bfinder_20190624_Hydjet_Pythia8_Official_BuToJpsiK_1033p1_pt3tkpt0p7dls2_allpthat_pthatweight_BDT.root");
   //TTree* t_cuts = (TTree*)f_mc_cuts->Get("BDT");
+  
+  //TTree* t_cuts = (TTree*)f_mc_cuts->Get("ntKp");
+  TTree* t_cuts = (TTree*)f_mc_cuts->Get("ntphi");
 
-  double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
-  int n_pt_bins = 7;
+  //File for Bpt - old
+  //TFile* f_mc_nocuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/flat_trees/selected_mc_ntKp_PbPb_2018_new_train_BDT_nocuts.root");
+
+  //File for Bpt - new, with acceptance cuts
+  //TFile* f_mc_nocuts = new TFile("/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntKp_PbPb_2018_corrected_BDT.root");
+
+  //File for Bs - new, with acceptace cuts
+  TFile* f_mc_nocuts = new TFile("/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntphi_PbPb_2018_corrected_BDT.root");
+
+  //TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp");
+  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntphi");
+  
+  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+  double pt_bins[] = {5, 10, 15, 20, 50};
+  //int n_pt_bins = 7;
+  int n_pt_bins = 4;
 
   TH1F* hist_tot_noweights = new TH1F("hist_tot_noweights", "hist_tot_noweights", n_pt_bins, pt_bins);
   TH1F* hist_passed_noweights = new TH1F("hist_passed_noweights", "hist_passed_noweights", n_pt_bins, pt_bins);
@@ -48,7 +63,7 @@ int main(){
   double bdt_pt_30_50;
   double bdt_pt_50_100;
   */
-
+  
   t_nocuts->SetBranchAddress("Bpt", &bpt1);
 
   /*
@@ -60,10 +75,18 @@ int main(){
   t_nocuts->SetBranchAddress("BDT_pt_30_50", &bdt_pt_30_50);
   t_nocuts->SetBranchAddress("BDT_pt_50_100", &bdt_pt_50_100);
   */
-  
+
   double weight = 1;
   //double bdt_total = 0;
-  TString variable;
+  //TString variable;
+
+  /*
+  for(int kk = 0; kk < 7; kk++)
+    {
+      cout << pt_bins[kk] << endl;
+      cout << pt_bins[kk+1] << endl;
+    }
+  */
 
   //Bin by bin analysis of the BDT (not working)
   /*
@@ -74,7 +97,7 @@ int main(){
       for(int kk=0; kk<7; kk++){
 	if ( (bpt1 < pt_bins[kk]) || (bpt1 > pt_bins[kk+1]) )
 	  continue;
-	variable.Form("BDT_%g_%g", pt_bins[kk], pt_bins[kk+1]);
+	variable.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
 	if ((5<bpt1) && (bpt1<7))
 	  {bdt_total = bdt_pt_5_7;}
 
@@ -96,10 +119,14 @@ int main(){
 	else if ((50<bpt1) && (bpt1<100))
 	  {bdt_total = bdt_pt_50_100;}
 	weight = read_weights(variable, bdt_total);
+	//cout<<"we are in bin "<<kk<<" and we have a pt of "<<bpt1<< " and a bdt of " <<bdt_total<<" and a weight of "<<weight<<endl;
       }
       hist_tot_weights->Fill(bpt1, weight);
       hist_tot_noweights->Fill(bpt1);
-      }*/
+      counter++;
+      cout << counter << endl;
+      }
+  */
 
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
@@ -108,16 +135,13 @@ int main(){
       weight = read_weights("Bpt", bpt1);
       hist_tot_weights->Fill(bpt1, weight);
     }
- 
+   
   TCanvas tot_noweights;
   hist_tot_noweights->Draw();
-  tot_noweights.SaveAs("./bin/results/Bu/efficiency/plots/tot_noweights.pdf");
+  tot_noweights.SaveAs("./results/Bs/efficiency/plots/tot_noweights.pdf");
   TCanvas tot_weights;
   hist_tot_weights->Draw();
-  tot_weights.SaveAs("./bin/results/Bu/efficiency/plots/totweights.pdf");
-
-  f_mc_nocuts->Close();
-  delete f_mc_nocuts;
+  tot_weights.SaveAs("./results/Bs/efficiency/plots/totweights.pdf");
 
   float bpt2;
 
@@ -142,10 +166,10 @@ int main(){
   t_cuts->SetBranchAddress("BDT_pt_30_50", &bdt2_pt_30_50);
   t_cuts->SetBranchAddress("BDT_pt_50_100", &bdt2_pt_50_100);
   */
-  
+
   double weight2 = 1;
-  //double bdt2_total = 0;
-  TString variable2;
+  //double bdt_2_total = 0;
+  //TString variable2;
 
   //Bin by bin analysis of the BDT (not working)
   /*
@@ -156,7 +180,7 @@ int main(){
       for(int kk=0; kk<7; kk++){
 	if ( (bpt2 < pt_bins[kk]) || (bpt2 > pt_bins[kk+1]) )
 	  continue;
-	variable2.Form("BDT_%g_%g", pt_bins[kk], pt_bins[kk+1]);
+	variable2.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
 	if ((5<bpt2) && (bpt2<7))
 	  {bdt2_total = bdt2_pt_5_7;}
 
@@ -178,12 +202,14 @@ int main(){
 	else if ((50<bpt2) && (bpt2<100))
 	  {bdt2_total = bdt2_pt_50_100;}
 	weight2 = read_weights(variable2, bdt2_total);
+	//cout<<"we are in bin "<<kk<<" and we have a pt of "<<bpt2<< "ad a bdt of " <<bdt2_total<<" and a weight of "<<weight2<<endl;
       }
       hist_passed_weights->Fill(bpt2, weight2);
       hist_passed_noweights->Fill(bpt2);
     }
   */
 
+  //Analysis of Bpt
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
       t_cuts->GetEntry(evt);
@@ -194,32 +220,27 @@ int main(){
 
   TCanvas passed_noweights;
   hist_passed_noweights->Draw();
-  passed_noweights.SaveAs("./bin/results/Bu/efficiency/plots/passed_noweights.pdf");
+  passed_noweights.SaveAs("./results/Bs/efficiency/plots/passed_noweights.pdf");
   TCanvas passed_weights;
   hist_passed_weights->Draw();
-  passed_weights.SaveAs("./bin/results/Bu/efficiency/plots/passed_weights.pdf");
+  passed_weights.SaveAs("./results/Bs/efficiency/plots/passed_weights.pdf");
 
-  f_mc_cuts->Close();
-  delete f_mc_cuts;
-
-  /*
   TEfficiency* efficiency0 = new TEfficiency(*hist_passed_noweights, *hist_tot_noweights);
-  TEfficiency* efficiency1 = new TEfficiency(*hist_passed_weights, *hist_tot_weights);
-
   TCanvas c0;
   efficiency0->Draw("AP");
-  c0.SaveAs("./bin/results/Bu/efficiency/plots/efficiency0.pdf");
+  c0.SaveAs("./results/Bs/efficiency/plots/efficiency0.pdf");
 
-  TFile* f0 = new TFile("./bin/results/Bu/efficiency/root_files/efficiency0.root" , "recreate");
+  TEfficiency* efficiency1 = new TEfficiency(*hist_passed_weights, *hist_tot_weights);
+  TCanvas c1;
+  efficiency1->Draw("AP");
+  c1.SaveAs("./results/Bs/efficiency/plots/efficiency1.pdf");
+
+  TFile* f0 = new TFile("./results/Bs/efficiency/root_files_Bpt/efficiency0.root" , "recreate");
   f0->cd();
   efficiency0->Write();
   f0->Write();
 
-  TCanvas c1;
-  efficiency1->Draw("AP");
-  c1.SaveAs("./bin/results/Bu/efficiency/plots/efficiency1.pdf");
-
-  TFile* f1 = new TFile("./bin/results/Bu/efficiency/root_files/efficiency1.root" , "recreate");
+  TFile* f1 = new TFile("./results/Bs/efficiency/root_files_Bpt/efficiency1.root" , "recreate");
   f1->cd();
   efficiency1->Write();
   f1->Write();
@@ -236,8 +257,15 @@ int main(){
       cout << efficiency1->GetEfficiency(i) << endl;
     }
 
+  delete hist_tot_noweights;
+  delete hist_passed_noweights;
+  delete hist_tot_weights;
+  delete hist_passed_weights;
+
   f_mc_cuts->Close();
   delete f_mc_cuts;
+  f_mc_nocuts->Close();
+  delete f_mc_nocuts;
 
   f0->ls();
   f0->Close();
@@ -245,13 +273,12 @@ int main(){
   f1->Close();
   
   return 0;
-  */
   
 }
 
 double read_weights(TString variable, double var_value){
   
-  TString input_file = "./bin/weights_bu.root";
+  TString input_file = "/lstore/cms/ev19u032/weights.root";
 
   TFile* f_wei = new TFile(input_file, "read");
 
@@ -279,7 +306,6 @@ double read_weights(TString variable, double var_value){
 }
 
 //definição da fc auxiliar
-
 double getWeight(double var_value, TH1D* h_weight){
   int bin = h_weight->FindBin(var_value);
   return h_weight->GetBinContent(bin);

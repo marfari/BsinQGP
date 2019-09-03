@@ -10,6 +10,7 @@
   <bin name="counter" file="counter.cc"></bin>
   <bin name="skimmer"   file="skimmer_new.cc"></bin>
   <bin name="eff_syst"   file="eff_syst.cc"></bin>
+  <bin name="x_section" file="x_section.cc"></bin>
 </environment>
 
 <Flags CXXFLAGS="-g"/>
