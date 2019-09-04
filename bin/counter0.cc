@@ -90,7 +90,7 @@ int main(){
 
   //Bin by bin analysis of the BDT (not working)
   /*
-  for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
+    for(int evt = 0; evt < 20000; evt++)
     {
       t_nocuts->GetEntry(evt);
 
@@ -123,12 +123,12 @@ int main(){
       }
       hist_tot_weights->Fill(bpt1, weight);
       hist_tot_noweights->Fill(bpt1);
-      counter++;
-      cout << counter << endl;
+      //counter++;
+      //cout << counter << endl;
       }
   */
-
-  for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
+  
+  for(int evt = 0; evt < 20000; evt++)
     {
       t_nocuts->GetEntry(evt);
       hist_tot_noweights->Fill(bpt1);
@@ -210,7 +210,7 @@ int main(){
   */
 
   //Analysis of Bpt
-  for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
+  for(int evt = 0; evt < 20000; evt++)
     {
       t_cuts->GetEntry(evt);
       hist_passed_noweights->Fill(bpt2);
