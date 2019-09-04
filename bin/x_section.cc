@@ -71,11 +71,17 @@ using namespace std;
 
 int main(){
 
+  //Raw yield files
   TFile* f_raw_yield_Bs = new TFile("./results/Bs/Bpt/pT.root");
   TFile* f_raw_yield_Bu = new TFile("/lstore/cms/ev19u032/pT_Bu_meson.root");
   
+  //Efficiency files
   TFile* f_efficiency_Bs = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/for_students/MCstudiesPbPbPtBin.root");
   TFile* f_efficiency_Bu = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/for_students/MCstudiesPbPb_Bsbin.root");
+
+  //Efficiency systematic error files
+  //TFile* f_eff_syst_Bs = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bs/efficiency/root_files_Bpt");
+  TFile* f_eff_syst_Bu = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files_Bpt");
 
   const double branching_fraction_Bs = 0.0000313;
   const double branching_fraction_Bu = 0.0000599;
@@ -84,7 +90,7 @@ int main(){
   //const double branching_fraction_error_Bu = 0.0000023;
 
   const double luminosity = 0.0000000015;  //wrong value
-  //const double luminosity_error = 0.0000000001;  //wrong value
+  const double luminosity_error = 0.0000000001;  //wrong value
 
   double pt_bins[] = {5, 10, 15, 20, 50};
   double n_pt_bins = 4;
@@ -96,6 +102,9 @@ int main(){
   efficiency_Bs = (TH1D*)f_efficiency_Bs->Get("hEff");
   TH1D* efficiency_Bu = new TH1D("efficiency_Bu", "efficiency_Bu", n_pt_bins, pt_bins);
   efficiency_Bu = (TH1D*)f_efficiency_Bu->Get("hEff");
+
+  //TGraphErrors* eff_syst_Bs = (TGraphErrors*)f_eff_syst_Bs->Get("Graph");
+  TGraphErrors* eff_syst_Bu = (TGraphErrors*)f_eff_syst_Bu->Get("Graph");
 
   //TH1F* x_section_Bu = new TH1F("x_section_Bu", "x_section_Bu", n_pt_bins, pt_bins);
   //TH1F* x_section_Bs = new TH1F("x_section_Bs", "x_section_Bs", n_pt_bins, pt_bins);
@@ -109,6 +118,9 @@ int main(){
 
   double* raw_Bs_y = raw_yield_Bs->GetY();
   double* raw_Bu_y = raw_yield_Bu->GetY();
+
+  //double* eff_s_Bs = eff_syst_Bs->GetY();
+  double* eff_s_Bu = eff_syst_Bu->GetY(); 
 
   /*
   for(int i = 0; i < n_pt_bins; i++)
@@ -141,6 +153,44 @@ int main(){
       cout << endl;
     }
 
+  double syst_errors_Bu[5][4];
+
+  //Eff-Acc systematic
+  syst_errors_Bu[0][0] = eff_s_Bu[0];
+  syst_errors_Bu[0][1] = eff_s_Bu[1];
+  syst_errors_Bu[0][2] = eff_s_Bu[2];
+  syst_errors_Bu[0][3] = eff_s_Bu[3];
+
+  //Fit systematic ---------- Luminosity systematic --------- Branching fraction systematic
+  for(int i = 0; i < 4; i++)
+    {
+      syst_errors_Bu[1][i] = 0.005;
+      syst_errors_Bu[2][i] = luminosity_error;
+      syst_errors_Bu[3][i] = 0.0000023;
+    }
+  
+  
+
+
+
+  //Eff-Acc systematic
+  syst_errors_Bs[0][0] = eff_s_Bs[0];
+  syst_errors_Bs[0][1] = eff_s_Bs[1];
+  syst_errors_Bs[0][2] = eff_s_Bs[2];
+  syst_errors_Bs[0][3] = eff_s_Bs[3];
+
+  //Fit systematic ---------- Luminosity systematic --------- Branching fraction systematic
+  for(int i = 0; i < 4; i++)
+    {
+      syst_errors_Bs[1][i] = 0.005;
+      syst_errors_Bs[2][i] = luminosity_error;
+      syst_errors_Bs[3][i] = 0.0000023;
+    }
+  
+
+
+
+  
   /*
   TCanvas Bu_c;
   x_section_Bu->SetMinimum(100000000000000);

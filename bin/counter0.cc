@@ -41,9 +41,7 @@ int main(){
   //TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp");
   TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntphi");
   
-  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
   double pt_bins[] = {5, 10, 15, 20, 50};
-  //int n_pt_bins = 7;
   int n_pt_bins = 4;
 
   TH1F* hist_tot_noweights = new TH1F("hist_tot_noweights", "hist_tot_noweights", n_pt_bins, pt_bins);
@@ -128,7 +126,7 @@ int main(){
       }
   */
   
-  for(int evt = 0; evt < 20000; evt++)
+  for(int evt = 0; evt < 500000; evt++)
     {
       t_nocuts->GetEntry(evt);
       hist_tot_noweights->Fill(bpt1);
@@ -210,7 +208,7 @@ int main(){
   */
 
   //Analysis of Bpt
-  for(int evt = 0; evt < 20000; evt++)
+  for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
       t_cuts->GetEntry(evt);
       hist_passed_noweights->Fill(bpt2);
