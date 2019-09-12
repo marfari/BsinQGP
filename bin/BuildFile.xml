@@ -5,9 +5,8 @@
 <use name="roostats"/>
 #<use name="UserCode"/>
 <environment>
-  <bin name="tentativa" file="tentativa.cc"></bin>
-  <bin name="counter0" file="counter0.cc"></bin> 
-  <bin name="counter" file="counter.cc"></bin>
+  <bin name="b_analyser" file="b_analyser.cc"></bin>
+  <bin name="counter0" file="counter0.cc"></bin>
   <bin name="skimmer"   file="skimmer_new.cc"></bin>
   <bin name="eff_syst"   file="eff_syst.cc"></bin>
   <bin name="x_section" file="x_section.cc"></bin>

@@ -12,42 +12,28 @@ using namespace std;
 double read_weights(TString var, double var_value);
 double getWeight(double var_value, TH1D* h_weight);
 
-//#define particle 0; //0 = B+;   1 = Bs;
+#define particle 0 //0 = B+;   1 = Bs;
 
 int main(){
 
-  //File for B+
-  TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_BDT.root");
-  //TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_test.root");
-
-  //File for Bs
-  //TFile* f_mc_cuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntphi_PbPb_2018_new_train_BDT.root");
-
-  //TFile* f_mc_cuts = new TFile("/lstore/cms/julia/most_updated_samples/crab_Bfinder_20190624_Hydjet_Pythia8_Official_BuToJpsiK_1033p1_pt3tkpt0p7dls2_allpthat_pthatweight_BDT.root");
-  //TTree* t_cuts = (TTree*)f_mc_cuts->Get("BDT");
+  TString input_f_mc_cuts = particle ? "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntphi_PbPb_2018_new_train_BDT.root" : "/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/prefiltered_trees/selected_mc_ntKp_PbPb_2018_corrected_BDT.root";
+  TFile* f_mc_cuts = new TFile(input_f_mc_cuts);
   
-  TTree* t_cuts = (TTree*)f_mc_cuts->Get("ntKp");
-  //TTree* t_cuts = (TTree*)f_mc_cuts->Get("ntphi");
+  TString input_t = particle ? "ntphi" : "ntKp";
+  TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t);
 
-  //File for B+ Bpt - old
-  //TFile* f_mc_nocuts = new TFile("/home/t3cms/julia/LSTORE/CMSSW_7_5_8_patch5/src/UserCode/Bs_analysis/flat_trees/selected_mc_ntKp_PbPb_2018_new_train_BDT_nocuts.root");
+  TString input_f_mc_nocuts = particle ? "/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntphi_PbPb_2018_corrected_BDT.root" : "/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntKp_PbPb_2018_corrected_BDT.root";
+  TFile* f_mc_nocuts = new TFile(input_f_mc_nocuts);
 
-  //File for B+ Bpt - new, with acceptance cuts
-  TFile* f_mc_nocuts = new TFile("/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntKp_PbPb_2018_corrected_BDT.root");
-
-  //File for Bs - new, with acceptace cuts
-  //TFile* f_mc_nocuts = new TFile("/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntphi_PbPb_2018_corrected_BDT.root");
-
-  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp");
-  //TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntphi");
+  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get(input_t);
   
-  double pt_bins[] = {5, 50};
+  //double pt_bins[] = {5, 50};
   //double pt_bins[] = {5, 10, 15, 20, 50};
-  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+  double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
   
-  int n_pt_bins = 1;
+  //int n_pt_bins = 1;
   //int n_pt_bins = 4;
-  //int n_pt_bins = 7;
+  int n_pt_bins = 7;
 
   TH1F* hist_tot_noweights = new TH1F("hist_tot_noweights", "hist_tot_noweights", n_pt_bins, pt_bins);
   TH1F* hist_passed_noweights = new TH1F("hist_passed_noweights", "hist_passed_noweights", n_pt_bins, pt_bins);
@@ -131,8 +117,6 @@ int main(){
       }
   */
 
-  cout << "1" << endl;
-
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
       t_nocuts->GetEntry(evt);
@@ -141,16 +125,22 @@ int main(){
       hist_tot_weights->Fill(bpt1, weight);
     }
 
-  cout << "2" << endl;
-
-  TCanvas tot_noweights;
-  hist_tot_noweights->Draw();
-  tot_noweights.SaveAs("./results/Bs/efficiency/plots/tot_noweights.pdf");
-  TCanvas tot_weights;
-  hist_tot_weights->Draw();
-  tot_weights.SaveAs("./results/Bs/efficiency/plots/totweights.pdf");
-
-  cout << "3" << endl;
+  if(particle == 0)
+    {
+      TCanvas tot_noweights;
+      hist_tot_noweights->Draw();
+      tot_noweights.SaveAs("./results/Bu/efficiency/plots/tot_noweights.pdf");
+      TCanvas tot_weights;
+      hist_tot_weights->Draw();
+      tot_weights.SaveAs("./results/Bu/efficiency/plots/totweights.pdf");
+    }else if(particle == 1){
+    TCanvas tot_noweights;
+    hist_tot_noweights->Draw();
+    tot_noweights.SaveAs("./results/Bs/efficiency/plots/tot_noweights.pdf");
+    TCanvas tot_weights;
+    hist_tot_weights->Draw();
+    tot_weights.SaveAs("./results/Bs/efficiency/plots/totweights.pdf");
+  }
 
   float bpt2;
 
@@ -218,8 +208,6 @@ int main(){
     }
   */
 
-  cout << "4" << endl;
-
   //Analysis of Bpt
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
@@ -229,34 +217,73 @@ int main(){
       hist_passed_weights->Fill(bpt2, weight2);
     }
 
-  cout << "5" << endl;
-
+  if(particle == 0){
   TCanvas passed_noweights;
   hist_passed_noweights->Draw();
   passed_noweights.SaveAs("./results/Bu/efficiency/plots/passed_noweights.pdf");
   TCanvas passed_weights;
   hist_passed_weights->Draw();
   passed_weights.SaveAs("./results/Bu/efficiency/plots/passed_weights.pdf");
+  }else if(particle == 1){
+TCanvas passed_noweights;
+  hist_passed_noweights->Draw();
+  passed_noweights.SaveAs("./results/Bs/efficiency/plots/passed_noweights.pdf");
+  TCanvas passed_weights;
+  hist_passed_weights->Draw();
+  passed_weights.SaveAs("./results/Bs/efficiency/plots/passed_weights.pdf");
+  }
 
   TEfficiency* efficiency0 = new TEfficiency(*hist_passed_noweights, *hist_tot_noweights);
-  TCanvas c0;
-  efficiency0->Draw("AP");
-  c0.SaveAs("./results/Bu/efficiency/plots/efficiency0.pdf");
+  if(particle == 0){
+    TCanvas c0;
+    efficiency0->Draw("AP");
+    c0.SaveAs("./results/Bu/efficiency/plots/efficiency0.pdf");
+  }else if(particle == 1){
+    TCanvas c0;
+    efficiency0->Draw("AP");
+    c0.SaveAs("./results/Bs/efficiency/plots/efficiency0.pdf");
+  }
 
   TEfficiency* efficiency1 = new TEfficiency(*hist_passed_weights, *hist_tot_weights);
-  TCanvas c1;
-  efficiency1->Draw("AP");
-  c1.SaveAs("./results/Bu/efficiency/plots/efficiency1.pdf");
+  if(particle == 0){
+    TCanvas c1;
+    efficiency1->Draw("AP");
+    c1.SaveAs("./results/Bu/efficiency/plots/efficiency1.pdf");
+  }else if(particle == 1){
+    TCanvas c1;
+    efficiency1->Draw("AP");
+    c1.SaveAs("./results/Bs/efficiency/plots/efficiency1.pdf");
+  }
 
-  TFile* f0 = new TFile("./results/Bu/efficiency/root_files_Bpt/efficiency0.root" , "recreate");
-  f0->cd();
-  efficiency0->Write();
-  f0->Write();
-
-  TFile* f1 = new TFile("./results/Bu/efficiency/root_files_Bpt/efficiency1.root" , "recreate");
-  f1->cd();
-  efficiency1->Write();
-  f1->Write();
+  if(particle == 0){
+    TFile* f0 = new TFile("./results/Bu/efficiency/root_files_Bpt/efficiency0.root" , "recreate");
+    f0->cd();
+    efficiency0->Write();
+    f0->Write();
+    f0->ls();
+    f0->Close();
+  
+    TFile* f1 = new TFile("./results/Bu/efficiency/root_files_Bpt/efficiency1.root" , "recreate");
+    f1->cd();
+    efficiency1->Write();
+    f1->Write();
+    f1->ls();
+    f1->Close();
+  }else if(particle == 0){
+    TFile* f0 = new TFile("./results/Bs/efficiency/root_files_Bpt/efficiency0.root" , "recreate");
+    f0->cd();
+    efficiency0->Write();
+    f0->Write();
+    f0->ls();
+    f0->Close();
+  
+    TFile* f1 = new TFile("./results/Bs/efficiency/root_files_Bpt/efficiency1.root" , "recreate");
+    f1->cd();
+    efficiency1->Write();
+    f1->Write();
+    f1->ls();
+    f1->Close();
+  }
 
   for(int i = 1; i < n_pt_bins + 1; i++)
     {
@@ -279,11 +306,6 @@ int main(){
   delete f_mc_cuts;
   f_mc_nocuts->Close();
   delete f_mc_nocuts;
-
-  f0->ls();
-  f0->Close();
-  f1->ls();
-  f1->Close();
   
   return 0;
   
