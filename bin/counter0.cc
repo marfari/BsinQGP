@@ -22,7 +22,7 @@ int main(){
   TString input_t = particle ? "ntphi" : "ntKp";
   TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t);
 
-  TString input_f_mc_nocuts = particle ? "/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntphi_PbPb_2018_corrected_BDT.root" : "/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntKp_PbPb_2018_corrected_BDT.root";
+  TString input_f_mc_nocuts = particle ? "/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntphi_PbPb_2018_corrected_nocuts_BDT.root" : "/lstore/cms/ev19u032/prefiltered_trees_final/acceptance_only_selected_mc_ntKp_PbPb_2018_corrected_BDT.root";
   TFile* f_mc_nocuts = new TFile(input_f_mc_nocuts);
 
   TTree* t_nocuts = (TTree*)f_mc_nocuts->Get(input_t);
@@ -43,7 +43,6 @@ int main(){
 
   float bpt1;
 
-  /*
   double bdt_pt_5_7;
   double bdt_pt_7_10;
   double bdt_pt_10_15;
@@ -51,11 +50,9 @@ int main(){
   double bdt_pt_20_30;
   double bdt_pt_30_50;
   double bdt_pt_50_100;
-  */
   
   t_nocuts->SetBranchAddress("Bpt", &bpt1);
 
-  /*
   t_nocuts->SetBranchAddress("BDT_pt_5_7", &bdt_pt_5_7);
   t_nocuts->SetBranchAddress("BDT_pt_7_10", &bdt_pt_7_10);
   t_nocuts->SetBranchAddress("BDT_pt_10_15", &bdt_pt_10_15);
@@ -63,23 +60,13 @@ int main(){
   t_nocuts->SetBranchAddress("BDT_pt_20_30", &bdt_pt_20_30);
   t_nocuts->SetBranchAddress("BDT_pt_30_50", &bdt_pt_30_50);
   t_nocuts->SetBranchAddress("BDT_pt_50_100", &bdt_pt_50_100);
-  */
 
   double weight = 1;
-  //double bdt_total = 0;
-  //TString variable;
-
-  /*
-  for(int kk = 0; kk < 7; kk++)
-    {
-      cout << pt_bins[kk] << endl;
-      cout << pt_bins[kk+1] << endl;
-    }
-  */
+  double bdt_total = 0;
+  TString variable;
 
   //Bin by bin analysis of the BDT (not working)
-  /*
-    for(int evt = 0; evt < 20000; evt++)
+  for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
       t_nocuts->GetEntry(evt);
 
@@ -115,16 +102,17 @@ int main(){
       //counter++;
       //cout << counter << endl;
       }
-  */
 
+  /*    
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
-    {
+      {
       t_nocuts->GetEntry(evt);
       hist_tot_noweights->Fill(bpt1);
       weight = read_weights("Bpt", bpt1);
       hist_tot_weights->Fill(bpt1, weight);
-    }
-
+      }
+    */
+    
   if(particle == 0)
     {
       TCanvas tot_noweights;
@@ -143,8 +131,7 @@ int main(){
   }
 
   float bpt2;
-
-  /*
+  
   Double_t bdt2_pt_5_7;
   Double_t bdt2_pt_7_10;
   Double_t bdt2_pt_10_15;
@@ -152,11 +139,9 @@ int main(){
   Double_t bdt2_pt_20_30;
   Double_t bdt2_pt_30_50;
   Double_t bdt2_pt_50_100;
-  */
 
   t_cuts->SetBranchAddress("Bpt", &bpt2);
 
-  /*
   t_cuts->SetBranchAddress("BDT_pt_5_7", &bdt2_pt_5_7);
   t_cuts->SetBranchAddress("BDT_pt_7_10", &bdt2_pt_7_10);
   t_cuts->SetBranchAddress("BDT_pt_10_15", &bdt2_pt_10_15);
@@ -164,14 +149,12 @@ int main(){
   t_cuts->SetBranchAddress("BDT_pt_20_30", &bdt2_pt_20_30);
   t_cuts->SetBranchAddress("BDT_pt_30_50", &bdt2_pt_30_50);
   t_cuts->SetBranchAddress("BDT_pt_50_100", &bdt2_pt_50_100);
-  */
 
   double weight2 = 1;
-  //double bdt_2_total = 0;
-  //TString variable2;
+  double bdt2_total = 0;
+  TString variable2;
 
   //Bin by bin analysis of the BDT (not working)
-  /*
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
       t_cuts->GetEntry(evt);
@@ -206,8 +189,8 @@ int main(){
       hist_passed_weights->Fill(bpt2, weight2);
       hist_passed_noweights->Fill(bpt2);
     }
-  */
-
+ 
+  /*
   //Analysis of Bpt
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
@@ -215,22 +198,23 @@ int main(){
       hist_passed_noweights->Fill(bpt2);
       weight2 = read_weights("Bpt", bpt2);
       hist_passed_weights->Fill(bpt2, weight2);
-    }
+      }
+  */
 
   if(particle == 0){
-  TCanvas passed_noweights;
-  hist_passed_noweights->Draw();
-  passed_noweights.SaveAs("./results/Bu/efficiency/plots/passed_noweights.pdf");
-  TCanvas passed_weights;
-  hist_passed_weights->Draw();
-  passed_weights.SaveAs("./results/Bu/efficiency/plots/passed_weights.pdf");
+    TCanvas passed_noweights;
+    hist_passed_noweights->Draw();
+    passed_noweights.SaveAs("./results/Bu/efficiency/plots/passed_noweights.pdf");
+    TCanvas passed_weights;
+    hist_passed_weights->Draw();
+    passed_weights.SaveAs("./results/Bu/efficiency/plots/passed_weights.pdf");
   }else if(particle == 1){
-TCanvas passed_noweights;
-  hist_passed_noweights->Draw();
-  passed_noweights.SaveAs("./results/Bs/efficiency/plots/passed_noweights.pdf");
-  TCanvas passed_weights;
-  hist_passed_weights->Draw();
-  passed_weights.SaveAs("./results/Bs/efficiency/plots/passed_weights.pdf");
+    TCanvas passed_noweights;
+    hist_passed_noweights->Draw();
+    passed_noweights.SaveAs("./results/Bs/efficiency/plots/passed_noweights.pdf");
+    TCanvas passed_weights;
+    hist_passed_weights->Draw();
+    passed_weights.SaveAs("./results/Bs/efficiency/plots/passed_weights.pdf");
   }
 
   TEfficiency* efficiency0 = new TEfficiency(*hist_passed_noweights, *hist_tot_noweights);
@@ -256,28 +240,28 @@ TCanvas passed_noweights;
   }
 
   if(particle == 0){
-    TFile* f0 = new TFile("./results/Bu/efficiency/root_files_Bpt/efficiency0.root" , "recreate");
+    TFile* f0 = new TFile("./results/Bu/efficiency/root_files/efficiency0.root" , "recreate");
     f0->cd();
     efficiency0->Write();
     f0->Write();
     f0->ls();
     f0->Close();
   
-    TFile* f1 = new TFile("./results/Bu/efficiency/root_files_Bpt/efficiency1.root" , "recreate");
+    TFile* f1 = new TFile("./results/Bu/efficiency/root_files/efficiency1.root" , "recreate");
     f1->cd();
     efficiency1->Write();
     f1->Write();
     f1->ls();
     f1->Close();
   }else if(particle == 0){
-    TFile* f0 = new TFile("./results/Bs/efficiency/root_files_Bpt/efficiency0.root" , "recreate");
+    TFile* f0 = new TFile("./results/Bs/efficiency/root_files/efficiency0.root" , "recreate");
     f0->cd();
     efficiency0->Write();
     f0->Write();
     f0->ls();
     f0->Close();
   
-    TFile* f1 = new TFile("./results/Bs/efficiency/root_files_Bpt/efficiency1.root" , "recreate");
+    TFile* f1 = new TFile("./results/Bs/efficiency/root_files/efficiency1.root" , "recreate");
     f1->cd();
     efficiency1->Write();
     f1->Write();
@@ -313,7 +297,7 @@ TCanvas passed_noweights;
 
 double read_weights(TString variable, double var_value){
   
-  TString input_file = "/lstore/cms/ev19u032/weights.root";
+  TString input_file = particle ? "/lstore/cms/ev19u032/weights/weights_Bs.root" :"/lstore/cms/ev19u032/weights/weights_Bu.root";
 
   TFile* f_wei = new TFile(input_file, "read");
 
