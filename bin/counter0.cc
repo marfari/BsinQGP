@@ -30,16 +30,18 @@ int main(){
   //double pt_bins[] = {5, 50};
   //double pt_bins[] = {5, 10, 15, 20, 50};
   double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+  double pt_binsh[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
   
   //int n_pt_bins = 1;
   //int n_pt_bins = 4;
   int n_pt_bins = 7;
+  int n_pt_binsh = 8;
 
-  TH1F* hist_tot_noweights = new TH1F("hist_tot_noweights", "hist_tot_noweights", n_pt_bins, pt_bins);
-  TH1F* hist_passed_noweights = new TH1F("hist_passed_noweights", "hist_passed_noweights", n_pt_bins, pt_bins);
+  TH1F* hist_tot_noweights = new TH1F("hist_tot_noweights", "hist_tot_noweights", n_pt_binsh, pt_binsh);
+  TH1F* hist_passed_noweights = new TH1F("hist_passed_noweights", "hist_passed_noweights", n_pt_binsh, pt_binsh);
 
-  TH1F* hist_tot_weights = new TH1F("hist_tot_weights", "hist_tot_weights", n_pt_bins, pt_bins);
-  TH1F* hist_passed_weights = new TH1F("hist_passed_weights", "hist_passed_weights", n_pt_bins, pt_bins);
+  TH1F* hist_tot_weights = new TH1F("hist_tot_weights", "hist_tot_weights", n_pt_binsh, pt_binsh);
+  TH1F* hist_passed_weights = new TH1F("hist_passed_weights", "hist_passed_weights", n_pt_binsh, pt_binsh);
 
   float bpt1;
 
@@ -50,7 +52,14 @@ int main(){
   double bdt_pt_20_30;
   double bdt_pt_30_50;
   double bdt_pt_50_100;
-  
+
+  /*
+  double bdt_pt_5_10;
+  double bdt_pt_10_15;
+  double bdt_pt_15_20;
+  double bdt_pt_20_50;
+  */
+
   t_nocuts->SetBranchAddress("Bpt", &bpt1);
 
   t_nocuts->SetBranchAddress("BDT_pt_5_7", &bdt_pt_5_7);
@@ -61,16 +70,22 @@ int main(){
   t_nocuts->SetBranchAddress("BDT_pt_30_50", &bdt_pt_30_50);
   t_nocuts->SetBranchAddress("BDT_pt_50_100", &bdt_pt_50_100);
 
+  /*
+  t_nocuts->SetBranchAddress("BDT_pt_5_10", &bdt_pt_5_10);
+  t_nocuts->SetBranchAddress("BDT_pt_10_15", &bdt_pt_10_15);
+  t_nocuts->SetBranchAddress("BDT_pt_15_20", &bdt_pt_15_20);
+  t_nocuts->SetBranchAddress("BDT_pt_20_50", &bdt_pt_20_50);
+  */
+
   double weight = 1;
   double bdt_total = 0;
   TString variable;
 
-  //Bin by bin analysis of the BDT (not working)
+  //Bin by bin analysis of the BDT for B+
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
       t_nocuts->GetEntry(evt);
-
-      for(int kk=0; kk<7; kk++){
+      for(int kk=0; kk<n_pt_bins; kk++){
 	if ( (bpt1 < pt_bins[kk]) || (bpt1 > pt_bins[kk+1]) )
 	  continue;
 	variable.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
@@ -95,13 +110,37 @@ int main(){
 	else if ((50<bpt1) && (bpt1<100))
 	  {bdt_total = bdt_pt_50_100;}
 	weight = read_weights(variable, bdt_total);
-	//cout<<"we are in bin "<<kk<<" and we have a pt of "<<bpt1<< " and a bdt of " <<bdt_total<<" and a weight of "<<weight<<endl;
       }
       hist_tot_weights->Fill(bpt1, weight);
       hist_tot_noweights->Fill(bpt1);
-      //counter++;
-      //cout << counter << endl;
+    }
+
+  //Bin by bin analysis of the BDT for Bs
+  /*
+  for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
+    {
+      t_nocuts->GetEntry(evt);
+      for(int kk=0; kk<n_pt_bins; kk++){
+	if ( (bpt1 < pt_bins[kk]) || (bpt1 > pt_bins[kk+1]) )
+	  continue;
+	variable.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
+	if ((5<bpt1) && (bpt1<10))
+	  {bdt_total = bdt_pt_5_10;}
+
+	else if ((10<bpt1) && (bpt1<15))
+	  {bdt_total = bdt_pt_10_15;}
+
+	else if ((15<bpt1) && (bpt1<20))
+	  {bdt_total = bdt_pt_15_20;}
+
+	else if ((20<bpt1) && (bpt1<50))
+	  {bdt_total = bdt_pt_20_50;}
+	weight = read_weights(variable, bdt_total);
       }
+      hist_tot_weights->Fill(bpt1, weight);
+      hist_tot_noweights->Fill(bpt1);
+    }
+  */
 
   /*    
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
@@ -140,6 +179,13 @@ int main(){
   Double_t bdt2_pt_30_50;
   Double_t bdt2_pt_50_100;
 
+  /*
+  double bdt2_pt_5_10;
+  double bdt2_pt_10_15;
+  double bdt2_pt_15_20;
+  double bdt2_pt_20_50;
+  */
+
   t_cuts->SetBranchAddress("Bpt", &bpt2);
 
   t_cuts->SetBranchAddress("BDT_pt_5_7", &bdt2_pt_5_7);
@@ -150,16 +196,23 @@ int main(){
   t_cuts->SetBranchAddress("BDT_pt_30_50", &bdt2_pt_30_50);
   t_cuts->SetBranchAddress("BDT_pt_50_100", &bdt2_pt_50_100);
 
+  /*
+  t_nocuts->SetBranchAddress("BDT_pt_5_10", &bdt2_pt_5_10);
+  t_nocuts->SetBranchAddress("BDT_pt_10_15", &bdt2_pt_10_15);
+  t_nocuts->SetBranchAddress("BDT_pt_15_20", &bdt2_pt_15_20);
+  t_nocuts->SetBranchAddress("BDT_pt_20_50", &bdt2_pt_20_50);
+  */
+
   double weight2 = 1;
   double bdt2_total = 0;
   TString variable2;
 
-  //Bin by bin analysis of the BDT (not working)
+  //Bin by bin analysis of the BDT for B+
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
       t_cuts->GetEntry(evt);
 
-      for(int kk=0; kk<7; kk++){
+      for(int kk=0; kk<n_pt_bins; kk++){
 	if ( (bpt2 < pt_bins[kk]) || (bpt2 > pt_bins[kk+1]) )
 	  continue;
 	variable2.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
@@ -184,12 +237,40 @@ int main(){
 	else if ((50<bpt2) && (bpt2<100))
 	  {bdt2_total = bdt2_pt_50_100;}
 	weight2 = read_weights(variable2, bdt2_total);
-	//cout<<"we are in bin "<<kk<<" and we have a pt of "<<bpt2<< "ad a bdt of " <<bdt2_total<<" and a weight of "<<weight2<<endl;
       }
       hist_passed_weights->Fill(bpt2, weight2);
       hist_passed_noweights->Fill(bpt2);
     }
- 
+
+  //Bin by bin analysis of the BDT for Bs
+  /*
+    for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
+    {
+      t_cuts->GetEntry(evt);
+
+      for(int kk=0; kk<n_pt_bins; kk++){
+	if ( (bpt2 < pt_bins[kk]) || (bpt2 > pt_bins[kk+1]) )
+	  continue;
+	variable2.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
+	if ((5<bpt2) && (bpt2<10))
+	  {bdt2_total = bdt2_pt_5_10;}
+
+	else if ((10<bpt2) && (bpt2<15))
+	  {bdt2_total = bdt2_pt_10_15;}
+
+	else if ((15<bpt2) && (bpt2<20))
+	  {bdt2_total = bdt2_pt_15_20;}
+
+	else if ((20<bpt2) && (bpt2<50))
+	  {bdt2_total = bdt2_pt_20_50;}
+
+	weight2 = read_weights(variable2, bdt2_total);
+      }
+      hist_passed_weights->Fill(bpt2, weight2);
+      hist_passed_noweights->Fill(bpt2);
+    }
+  */
+
   /*
   //Analysis of Bpt
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
@@ -269,14 +350,14 @@ int main(){
     f1->Close();
   }
 
-  for(int i = 1; i < n_pt_bins + 1; i++)
+  for(int i = 1; i < n_pt_binsh + 1; i++)
     {
       cout << efficiency0->GetEfficiency(i) << endl;
     }
 
   cout << endl;
 
-  for(int i = 1; i < n_pt_bins + 1; i++)
+  for(int i = 1; i < n_pt_binsh + 1; i++)
     {
       cout << efficiency1->GetEfficiency(i) << endl;
     }

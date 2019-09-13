@@ -14,11 +14,13 @@ int main(){
   TFile* f_eff0 = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files/efficiency0.root");
   TFile* f_eff1 = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files/efficiency1.root");
 
-  double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+  double pt_bins[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
+  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
   //double pt_bins[] = {5, 10, 15, 20, 50};
   //double pt_bins[] = {5, 50};
 
-  int n_pt_bins = 7;
+  int n_pt_bins = 8;
+  //int n_pt_bins = 7;
   //int n_pt_bins = 4;
   //int n_pt_bins = 1;
 
@@ -33,15 +35,18 @@ int main(){
 
   double y_values[n_pt_bins];
 
-  double x_values[] = {6, 8.5, 12.5, 17.5, 25, 40, 75};  
+  double x_values[] = {6, 8.5, 12.5, 17.5, 25, 35, 45, 55};  
+  //double x_values[] = {6, 8.5, 12.5, 17.5, 25, 40, 75};  
   //double x_values[] = {7.5, 12.5, 17.5, 35};
   //double x_values[] = {27.5};
 
-  double x_errors[] = {1, 1.5, 2.5, 2.5, 5, 10, 25};
+  double x_errors[] = {1, 1.5, 2.5, 2.5, 5, 5, 5, 5};
+  //double x_errors[] = {1, 1.5, 2.5, 2.5, 5, 10, 25};
   //double x_errors[] = {2.5, 2.5, 2.5, 15};
   //double x_errors[] = {22.5};
   
-  double y_errors[] = {0, 0, 0, 0, 0, 0, 0};
+  double y_errors[] = {0, 0, 0, 0, 0, 0, 0, 0};
+  //double y_errors[] = {0, 0, 0, 0, 0, 0, 0};
   //double y_errors[] = {0, 0, 0, 0};
   //double y_errors[] = {0};
 
