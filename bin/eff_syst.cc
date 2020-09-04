@@ -9,19 +9,21 @@
 
 using namespace std;
 
+#define particle 1 //0 = B+;   1 = Bs;
+
 int main(){
   
-  TFile* f_eff0 = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files/efficiency0.root");
-  TFile* f_eff1 = new TFile("/home/t3cms/ev19u033/CMSSW_10_3_1_patch3/src/UserCode/BsinQGP/bin/results/Bu/efficiency/root_files/efficiency1.root");
+  TFile* f_eff0 = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency0.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root");
+  TFile* f_eff1 = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency1.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root");
 
-  double pt_bins[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
+  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
   //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
-  //double pt_bins[] = {5, 10, 15, 20, 50};
+  double pt_bins[] = {5, 10, 15, 20, 50};
   //double pt_bins[] = {5, 50};
 
-  int n_pt_bins = 8;
+  //int n_pt_bins = 8;
   //int n_pt_bins = 7;
-  //int n_pt_bins = 4;
+  int n_pt_bins = 4;
   //int n_pt_bins = 1;
 
   TEfficiency* efficiency0 = new TEfficiency("efficiency0", "efficiency0", n_pt_bins, pt_bins);
@@ -65,11 +67,17 @@ int main(){
   systematic_errors->SetMarkerStyle(5);
   systematic_errors->Draw("AP");
   systematic_errors->SetTitle("BDT efficiency systematic error");
-  c.SaveAs("./results/Bu/efficiency/plots/systematic_error.gif");
-  c.SaveAs("./results/Bu/efficiency/plots/systematic_error.pdf");
-  
 
-  TFile* f1 = new TFile("./results/Bu/efficiency/root_files/efficiency_systematic_errors.root", "recreate");
+  if (particle == 0){
+     c.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/systematic_error.gif");
+     c.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/systematic_error.pdf");
+  }
+  else if (particle == 1){
+     c.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/systematic_error.gif");
+     c.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/systematic_error.pdf");
+  }
+
+  TFile* f1 = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency_systematic_errors.root", "recreate") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency_systematic_errors.root", "recreate");
   f1->cd();
   systematic_errors->Write();
   f1->Write();
