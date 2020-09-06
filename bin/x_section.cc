@@ -100,7 +100,7 @@ int main(){
   efficiency = (TEfficiency*)f_efficiency->Get("hist_tot_noweights_clone");
   TGraphErrors* eff_syst = (TGraphErrors*)f_eff_syst->Get("Graph");
 
-  TH1F* x_section = particle ? new TH1F("x_section_Bs", "x_section_Bs", n_pt_bins, pt_bins) : new TH1F("x_section_Bu", "x_section_Bu", n_pt_bins, pt_bins);
+  //TGraphErrors* x_section = particle ? new TGraphErrors("x_section_Bs", "x_section_Bs", n_pt_bins, pt_bins) : new TGraphErrors("x_section_Bu", "x_section_Bu", n_pt_bins, pt_bins);
 
   double x_sec[4];
   double x_sec0;
@@ -110,7 +110,9 @@ int main(){
 
   double* raw = raw_yield->GetY();
 
-  double* eff_s = eff_syst->GetY();
+  //double* eff_s = eff_syst->GetY();
+   
+  double syst_error[4];
 
  /*
   for(int i = 0; i < n_pt_bins; i++)
@@ -126,8 +128,8 @@ int main(){
       }
       cout << endl;
     }
- */ 
-  
+ */   
+
   for(int i = 0; i < n_pt_bins; i++)
     {
       n = raw[i];
@@ -138,11 +140,11 @@ int main(){
       cout << "x_sec0 =" << x_sec0 << endl;
       x_sec[i] = x_sec0;
       cout << "x_sec[i] =" << x_sec[i] << endl;
-      x_section->SetBinContent(i, x_sec0);
-      cout << "bin content =" << x_section->GetBinContent(i) << endl;
+      syst_error[i] = eff_syst->GetErrorX(i);
+      cout << "syst_error=" << syst_error[i] << endl;
     }
-  
  
+  /*
   double syst_errors[5][4];
 
   //Eff-Acc systematic
@@ -158,11 +160,16 @@ int main(){
       syst_errors[2][i] = luminosity_error;
       syst_errors[3][i] = 0.0000023;
     }
-  
+  */
+
+  TGraphErrors* x_section = particle ? new TGraphErrors(n_pt_bins, pt_bins, x_sec, syst_error) : new TGraphErrors(n_pt_bins, pt_bins, x_sec, syst_error);
+ 
   TCanvas c;
   //x_section->SetMinimum(100000000000000000);
   //x_section->SetMaximum(2000000000000000000);
-  x_section->Draw();
+  x_section->SetMarkerColor(4);
+  x_section->SetMarkerStyle(21);
+  x_section->Draw("AP");
   if (particle == 0){
      c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.gif");
      c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.pdf");
