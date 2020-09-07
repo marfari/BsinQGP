@@ -67,12 +67,12 @@ using namespace std;
 // 0 = Bu
 // 1 = Bs
 
-//void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x_sec, double* stat, double* syst);
+void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x_sec, double* stat, double* syst);
 //void error_syst_final(double s_errors_bin);
 
 #define particle 1
 
-int main(){
+void x_section(){
 
   //Raw yield files
   TFile* f_raw_yield = particle ?  new TFile("~/work2/BinQGP/results/Bs/Bpt/pT.root") : new TFile("~/work2/BinQGP/results/Bu/Bpt/pT.root");
@@ -82,68 +82,72 @@ int main(){
 
   //Efficiency systematic error files
   TFile* f_eff_syst = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency_systematic_errors.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency_systematic_errors.root");
+	
+  const double branching_fraction = particle ? 0.0000313 : 0.0000599;//check
+  const double branching_fraction_error = particle ?  0.0000030 : 0.0000023; //absolute error
 
-  const double branching_fraction = particle ? 0.0000313 : 0.0000599;
+  const double luminosity = 302.3;  //pb^-1
+  const double luminosity_error = 0.023;  //(relative error)
 
-  const double branching_fraction_error = particle ?  0.0000030 : 0.0000023;
+  //yields
+  TGraphAsymmErrors* raw_yield = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;1"); //has absolute stat errors (y error bars)
+  TGraphAsymmErrors* raw_yield_s = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;2"); //has absolute syst errors (y error bars)
 
-  const double luminosity = 0.0000000000003023;  //wrong value
-  const double luminosity_error = 0.0000000001;  //wrong value
+  double* pt_bins = raw_yield->GetX();
+  const int n_pt_bins = raw_yield->GetN();
 
-  double pt_bins[] = {5, 10, 15, 20, 50};
-  double n_pt_bins = 4;
-
-  TGraphAsymmErrors* raw_yield = (TGraphAsymmErrors*)f_raw_yield->Get("Graph");
-
+  //efficiencies
   TEfficiency* efficiency = particle ? new TEfficiency("efficiency_Bs", "efficiency_Bs", n_pt_bins, pt_bins) : new TEfficiency("efficiency_Bu", "efficiency_Bu", n_pt_bins, pt_bins);
+  efficiency = (TEfficiency*)f_efficiency->Get("hist_tot_noweights_clone");//has efficiencies stat errors (y error bars)
 
-  efficiency = (TEfficiency*)f_efficiency->Get("hist_tot_noweights_clone");
-  TGraphErrors* eff_syst = (TGraphErrors*)f_eff_syst->Get("Graph");
+  //systematic error
+  TGraphErrors* efficiency_syst = (TGraphErrors*)f_eff_syst->Get("Graph");// has efficiencies syst errors (y values)
 
-  //TGraphErrors* x_section = particle ? new TGraphErrors("x_section_Bs", "x_section_Bs", n_pt_bins, pt_bins) : new TGraphErrors("x_section_Bu", "x_section_Bu", n_pt_bins, pt_bins);
+  ///// VARIABLES /////
 
-  double x_sec[4];
-  double x_sec0;
+  double* raw = raw_yield->GetY(); // yield value
+  double* raw_errX_low = raw_yield->GetEXlow(); //lower pt  error 
+  double* raw_errX_high = raw_yield->GetEXhigh(); //upper pt  error 
+
+  double* eff_s = efficiency_syst->GetY(); //efficiency syst error (relative)
 
   double n;
   double eff;
+  double x_sec0;
+  double norm;
+  double raw_stat;
+  double raw_syst;
+  double eff_syst;
+  double lumi_syst = luminosity_error; // (relative) 
+  double branch_syst = branching_fraction_error/branching_fraction; // (relative)
+  double tot_syst;
 
-  double* raw = raw_yield->GetY();
-
-  //double* eff_s = eff_syst->GetY();
-   
-  double syst_error[4];
-
- /*
-  for(int i = 0; i < n_pt_bins; i++)
-    {
-      cout << "Bin " << i+1 << endl;
-      if (particle == 1){
-         cout << "Efficiency Bs = " << efficiency->GetBinContent(i+1) << endl;
-         cout << "Yield Bs = " << raw[i] << endl;
-      }
-      else if (particle == 0){
-         cout << "Efficiency Bu = " << efficiency->GetBinContent(i+1) << endl;
-         cout << "Yield Bu = " << raw[i] << endl;
-      }
-      cout << endl;
-    }
- */   
-
-  for(int i = 0; i < n_pt_bins; i++)
-    {
-      n = raw[i];
-      cout << "n ="<< n << endl;
-      eff = efficiency->GetEfficiency(i+1);
-      cout << "eff =" << eff << endl;
-      x_sec0 = n/(eff*branching_fraction*luminosity);
-      cout << "x_sec0 =" << x_sec0 << endl;
-      x_sec[i] = x_sec0;
-      cout << "x_sec[i] =" << x_sec[i] << endl;
-      syst_error[i] = eff_syst->GetErrorX(i);
-      cout << "syst_error=" << syst_error[i] << endl;
-    }
+  double x_sec[n_pt_bins]; //cross section central value 
+  double x_sec_stat[n_pt_bins]; //cross section stat error
+  double x_sec_syst[n_pt_bins]; //cross section syst error
  
+
+  for(int i = 0; i < n_pt_bins; i++)
+    {
+      /// Central Value ///
+      n = raw[i]; //yield value
+      eff = efficiency->GetEfficiency(i+1); //efficiency value
+      norm = eff*branching_fraction*luminosity;
+      x_sec0 = n/norm; //cross section (central value)
+      x_sec[i] = x_sec0; 
+
+      /// Stat Error ///
+      raw_stat = raw_yield->GetErrorY(i);
+      x_sec_stat[i] = raw_stat/norm;
+      
+      /// Syst Error /// (relative)
+      raw_syst = (raw_yield_s->GetErrorY(i))/n;
+      eff_syst = fabs(eff_s[i]);
+  
+      tot_syst = raw_syst*raw_syst + eff_syst*eff_syst + lumi_syst*lumi_syst + branch_syst*branch_syst;
+      x_sec_syst[i] = sqrt(tot_syst)*x_sec0;
+    }
+
   /*
   double syst_errors[5][4];
 
@@ -161,36 +165,11 @@ int main(){
       syst_errors[3][i] = 0.0000023;
     }
   */
-
-  TGraphErrors* x_section = particle ? new TGraphErrors(n_pt_bins, pt_bins, x_sec, syst_error) : new TGraphErrors(n_pt_bins, pt_bins, x_sec, syst_error);
  
-  TCanvas c;
-  //x_section->SetMinimum(100000000000000000);
-  //x_section->SetMaximum(2000000000000000000);
-  x_section->SetMarkerColor(4);
-  x_section->SetMarkerStyle(21);
-  x_section->Draw("AP");
-  if (particle == 0){
-     c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.gif");
-     c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.pdf");
-  }
-  else if (particle == 1){
-     c.SaveAs("~/work2/BinQGP/results/Bs/x_section/x_section.gif");
-     c.SaveAs("~/work2/BinQGP/results/Bs/x_section/x_section.pdf");
-  }
-
-  TFile* f = particle ? new TFile("~/work2/BinQGP/results/Bs/x_section/x_section.root", "recreate") : new TFile("~/work2/BinQGP/results/Bu/x_section/x_section.root", "recreate");
-  f->cd();
-  x_section->Write();
-  f->Write();
-
-  
-
-  return 0;
-  
+  plot_xsection(n_pt_bins, pt_bins, raw_errX_low, raw_errX_high, x_sec, x_sec_stat, x_sec_syst); 
 }
  
-/*
+
 void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x_sec, double* stat, double* syst){
   TCanvas c;
   TMultiGraph* mg = new TMultiGraph();
@@ -209,14 +188,29 @@ void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x
   g_syst->SetMarkerColor(4);
   g_syst->SetMarkerStyle(1);
   g_syst->SetLineColor(2);  
-  
-  mg->Add(gr);
-  mg->Add(grs);
+
+  TFile* f = particle ? new TFile("~/work2/BinQGP/results/Bs/x_section/x_section.root", "recreate") : new TFile("~/work2/BinQGP/results/Bu/x_section/x_section.root", "recreate");
+  f->cd();
+ 
+  mg->Add(g_stat);
+  mg->Add(g_syst);
   mg->Draw("AP");
   mg->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
-  mg->GetYaxis()->SetTitle("X-section [GeV^{-1}]");
+  mg->GetYaxis()->SetTitle("#frac{d#sigma}{dp_{T}} [pb/GeV]");
+ 
+  f->Write();
+
+  if (particle == 0){
+     c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.gif");
+     c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.pdf");
+  }
+  else if (particle == 1){
+     c.SaveAs("~/work2/BinQGP/results/Bs/x_section/x_section.gif");
+     c.SaveAs("~/work2/BinQGP/results/Bs/x_section/x_section.pdf");
+  }
+  f->Close();
 }
-*/
+
 /*
 //function that evaluates the final systematic error
 //s_errors_bin = array com os valores dos 5 erros por bin
