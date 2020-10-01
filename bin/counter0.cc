@@ -14,8 +14,7 @@ double getWeight(double var_value, TH1D* h_weight);
 
 #define particle 1 //0 = B+;   1 = Bs;
 
-int main(){
-  cout << "beginning" << endl;
+int counter0(){
 
   TString input_f_mc_cuts = particle ? "/lstore/cms/nuno/ppdata2017/000814/BsMC.root" : "/lstore/cms/nuno/ppdata2017/000814/BPMC.root";
   TFile* f_mc_cuts = new TFile(input_f_mc_cuts);
@@ -23,12 +22,10 @@ int main(){
   TString input_t = particle ? "ntphi" : "ntKp";
   TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t);
 
-  TString input_f_mc_nocuts = particle ? "/lstore/cms/nuno/ppdata2017/000821/BsMC.root" : "/lstore/cms/nuno/ppdata2017/000821/BPMC.root";
+  TString input_f_mc_nocuts = particle ? "/lstore/cms/nuno/ppdata2017/000926_nocut_flat/BsMC.root" : "/lstore/cms/nuno/ppdata2017/000906_nocut/BPMC_nobdt.root";
   TFile* f_mc_nocuts = new TFile(input_f_mc_nocuts);
-
   TTree* t_nocuts = (TTree*)f_mc_nocuts->Get(input_t);
-  cout << "trees" << endl; 
-
+ 
   double pt_bins[] = {5, 10, 15, 20, 50};
   //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
   //double pt_binsh[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
@@ -42,11 +39,9 @@ int main(){
 
   TH1F* hist_tot_weights = new TH1F("hist_tot_weights", "hist_tot_weights", n_pt_bins, pt_bins);
   TH1F* hist_passed_weights = new TH1F("hist_passed_weights", "hist_passed_weights", n_pt_bins, pt_bins);
-  cout << "histos" << endl;
 
 
   float bpt1;
-
   /*
   double bdt_pt_5_7;
   double bdt_pt_7_10;
@@ -56,15 +51,13 @@ int main(){
   double bdt_pt_30_50;
   double bdt_pt_50_100;
   */
-
+  
   float bdt_pt_5_10;
   float bdt_pt_10_15;
   float bdt_pt_15_20;
   float bdt_pt_20_50;
 
   t_nocuts->SetBranchAddress("Bpt", &bpt1);
-  cout << "set_branches" << endl;
-
   /*
   t_nocuts->SetBranchAddress("BDT_pt_5_7", &bdt_pt_5_7);
   t_nocuts->SetBranchAddress("BDT_pt_7_10", &bdt_pt_7_10);
@@ -74,12 +67,12 @@ int main(){
   t_nocuts->SetBranchAddress("BDT_pt_30_50", &bdt_pt_30_50);
   t_nocuts->SetBranchAddress("BDT_pt_50_100", &bdt_pt_50_100);
   */
-
+  
   t_nocuts->SetBranchAddress("BDT_pt_5_10", &bdt_pt_5_10);
   t_nocuts->SetBranchAddress("BDT_pt_10_15", &bdt_pt_10_15);
   t_nocuts->SetBranchAddress("BDT_pt_15_20", &bdt_pt_15_20);
   t_nocuts->SetBranchAddress("BDT_pt_20_50", &bdt_pt_20_50);
-
+  
   double weight = 1;
   double bdt1_total = 0;
 
@@ -120,13 +113,16 @@ int main(){
   cout << "for_loop" << endl;
   */
 
-
   //Bin by bin analysis of the BDT for Bs
   TString variable;
-  cout << "cycle_init" << endl;
+  cout << "starting cycle without cuts" << endl;
+  cout << "no cuts entries = " << t_nocuts->GetEntries() << endl;
+  cout << "cuts entries = " << t_cuts->GetEntries() << endl;
+
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
       t_nocuts->GetEntry(evt);
+
       for(int kk=0; kk<n_pt_bins; kk++){
 	if ( (bpt1 < pt_bins[kk]) || (bpt1 > pt_bins[kk+1]) )
 	  continue;
@@ -143,13 +139,11 @@ int main(){
 	else if ((20<bpt1) && (bpt1<50))
 	  {bdt1_total = bdt_pt_20_50;}
 	weight = read_weights(variable, bdt1_total);
-      }
+      }      
       hist_tot_weights->Fill(bpt1, weight);
       hist_tot_noweights->Fill(bpt1);
     }
-  cout << "cycle_end" << endl;
-
-
+  cout << "ending cycle without cuts" << endl;
   /*    
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
       {
@@ -163,13 +157,13 @@ int main(){
   if(particle == 0)
     {
       TCanvas tot_noweights;
-
       hist_tot_noweights->Draw();
       tot_noweights.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/tot_noweights.pdf");
       TCanvas tot_weights;
       hist_tot_weights->Draw();
       tot_weights.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/totweights.pdf");
-    }else if(particle == 1){
+    }
+  else if(particle == 1){
     TCanvas tot_noweights;
     hist_tot_noweights->Draw();
     tot_noweights.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/tot_noweights.pdf");
@@ -179,7 +173,6 @@ int main(){
   }
 
   float bpt2;
-  
   /*
   Double_t bdt2_pt_5_7;
   Double_t bdt2_pt_7_10;
@@ -189,14 +182,14 @@ int main(){
   Double_t bdt2_pt_30_50;
   Double_t bdt2_pt_50_100;
   */
-
+  
   float bdt2_pt_5_10;
   float bdt2_pt_10_15;
   float bdt2_pt_15_20;
   float bdt2_pt_20_50;
+  
 
   t_cuts->SetBranchAddress("Bpt", &bpt2);
-
   /*
   t_cuts->SetBranchAddress("BDT_pt_5_7", &bdt2_pt_5_7);
   t_cuts->SetBranchAddress("BDT_pt_7_10", &bdt2_pt_7_10);
@@ -206,15 +199,15 @@ int main(){
   t_cuts->SetBranchAddress("BDT_pt_30_50", &bdt2_pt_30_50);
   t_cuts->SetBranchAddress("BDT_pt_50_100", &bdt2_pt_50_100);
   */
-
-  t_nocuts->SetBranchAddress("BDT_pt_5_10", &bdt2_pt_5_10);
-  t_nocuts->SetBranchAddress("BDT_pt_10_15", &bdt2_pt_10_15);
-  t_nocuts->SetBranchAddress("BDT_pt_15_20", &bdt2_pt_15_20);
-  t_nocuts->SetBranchAddress("BDT_pt_20_50", &bdt2_pt_20_50);
+  
+  t_cuts->SetBranchAddress("BDT_pt_5_10", &bdt2_pt_5_10);
+  t_cuts->SetBranchAddress("BDT_pt_10_15", &bdt2_pt_10_15);
+  t_cuts->SetBranchAddress("BDT_pt_15_20", &bdt2_pt_15_20);
+  t_cuts->SetBranchAddress("BDT_pt_20_50", &bdt2_pt_20_50);
+  
 
   double weight2 = 1;
   double bdt2_total = 0;
-
   /*
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
@@ -253,11 +246,12 @@ int main(){
 
   //Bin by bin analysis of the BDT for Bs
     TString variable2;
+    cout << "starting cycle with cuts" << endl;
 
     for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
       t_cuts->GetEntry(evt);
-
+        
       for(int kk=0; kk<n_pt_bins; kk++){
 	if ( (bpt2 < pt_bins[kk]) || (bpt2 > pt_bins[kk+1]) )
 	  continue;
@@ -273,13 +267,13 @@ int main(){
 
 	else if ((20<bpt2) && (bpt2<50))
 	  {bdt2_total = bdt2_pt_20_50;}
-
 	weight2 = read_weights(variable2, bdt2_total);
       }
+      
       hist_passed_weights->Fill(bpt2, weight2);
       hist_passed_noweights->Fill(bpt2);
     }
-
+  cout << "ending cycle with cuts" << endl;
   /*
   //Analysis of Bpt
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
@@ -290,6 +284,7 @@ int main(){
       hist_passed_weights->Fill(bpt2, weight2);
       }
   */
+
 
   if(particle == 0){
     TCanvas passed_noweights;
@@ -317,7 +312,7 @@ int main(){
     efficiency0->Draw("AP");
     c0.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/efficiency0.pdf");
   }
-
+  
   TEfficiency* efficiency1 = new TEfficiency(*hist_passed_weights, *hist_tot_weights);
   if(particle == 0){
     TCanvas c1;
@@ -328,7 +323,7 @@ int main(){
     efficiency1->Draw("AP");
     c1.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/efficiency1.pdf");
   }
-
+  
   if(particle == 0){
     TFile* f0 = new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root" , "recreate");
     f0->cd();
@@ -336,13 +331,14 @@ int main(){
     f0->Write();
     f0->ls();
     f0->Close();
-  
+    
     TFile* f1 = new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency1.root" , "recreate");
     f1->cd();
     efficiency1->Write();
     f1->Write();
     f1->ls();
     f1->Close();
+    
   }else if(particle == 1){
     TFile* f0 = new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency0.root" , "recreate");
     f0->cd();
@@ -350,26 +346,28 @@ int main(){
     f0->Write();
     f0->ls();
     f0->Close();
-  
+     
     TFile* f1 = new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency1.root" , "recreate");
     f1->cd();
     efficiency1->Write();
     f1->Write();
     f1->ls();
     f1->Close();
+    
   }
-
+  /*
   for(int i = 1; i < n_pt_bins + 1; i++)
     {
       cout << efficiency0->GetEfficiency(i) << endl;
     }
 
   cout << endl;
-
+  
   for(int i = 1; i < n_pt_bins + 1; i++)
     {
       cout << efficiency1->GetEfficiency(i) << endl;
     }
+  */
 
   delete hist_tot_noweights;
   delete hist_passed_noweights;

@@ -125,7 +125,10 @@ void x_section(){
   double x_sec[n_pt_bins]; //cross section central value 
   double x_sec_stat[n_pt_bins]; //cross section stat error
   double x_sec_syst[n_pt_bins]; //cross section syst error
- 
+
+  /// TABLE ///
+  cout << '|' << setw(15) << "Total Stat" << '|' << setw(15) << "Raw Syst" << '|' << setw(15) << "Eff Syst" << '|' << setw(15) << "Lumi Syst" << '|' << setw(15) << "Branch Syst" << '|' << setw(15) << "Squared Sum" << '|' << setw(15) << "Total Syst " << '|' << setw(15) << "Cross Section" << '|' << endl;
+
 
   for(int i = 0; i < n_pt_bins; i++)
     {
@@ -138,14 +141,17 @@ void x_section(){
 
       /// Stat Error ///
       raw_stat = raw_yield->GetErrorY(i);
-      x_sec_stat[i] = raw_stat/norm;
+      x_sec_stat[i] = raw_stat/(n*luminosity*branching_fraction); //relative, to make absolute divide by luminosity*branch
       
       /// Syst Error /// (relative)
       raw_syst = (raw_yield_s->GetErrorY(i))/n;
       eff_syst = fabs(eff_s[i]);
   
       tot_syst = raw_syst*raw_syst + eff_syst*eff_syst + lumi_syst*lumi_syst + branch_syst*branch_syst;
-      x_sec_syst[i] = sqrt(tot_syst)*x_sec0;
+      x_sec_syst[i] = sqrt(tot_syst)*x_sec0; //relative, to make absolute multiply by xsec0
+
+      cout << '|' << setw(15) << x_sec_stat[i] << '|' << setw(15) << raw_syst << '|' << setw(15) << eff_syst << '|' << setw(15) << lumi_syst << '|' << setw(15) << branch_syst << '|' << setw(15) << tot_syst << '|' << setw(15) << x_sec_syst[i] << '|' << setw(15) << x_sec[i] << '|' << endl;
+      
     }
 
   /*

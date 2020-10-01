@@ -11,20 +11,18 @@ using namespace std;
 
 #define particle 1 //0 = B+;   1 = Bs;
 
-int main(){
+int eff_syst(){
+  
+  TFile* f_raw_yield = particle ?  new TFile("~/work2/BinQGP/results/Bs/Bpt/pT.root") : new TFile("~/work2/BinQGP/results/Bu/Bpt/pT.root");
+  TGraphAsymmErrors* raw_yield = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;1");
   
   TFile* f_eff0 = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency0.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root");
-  TFile* f_eff1 = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency1.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root");
+  TFile* f_eff1 = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency1.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency1.root");
 
-  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
-  //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
+  int n_pt_bins = raw_yield->GetN();
+  double *x_values = raw_yield->GetX();
+ 
   double pt_bins[] = {5, 10, 15, 20, 50};
-  //double pt_bins[] = {5, 50};
-
-  //int n_pt_bins = 8;
-  //int n_pt_bins = 7;
-  int n_pt_bins = 4;
-  //int n_pt_bins = 1;
 
   TEfficiency* efficiency0 = new TEfficiency("efficiency0", "efficiency0", n_pt_bins, pt_bins);
   TEfficiency* efficiency1 = new TEfficiency("efficiency1", "efficiency1", n_pt_bins, pt_bins);
@@ -36,35 +34,26 @@ int main(){
   double syst;
 
   double y_values[n_pt_bins];
-
-  double x_values[] = {6, 8.5, 12.5, 17.5, 25, 35, 45, 55};  
-  //double x_values[] = {6, 8.5, 12.5, 17.5, 25, 40, 75};  
-  //double x_values[] = {7.5, 12.5, 17.5, 35};
-  //double x_values[] = {27.5};
-
-  double x_errors[] = {1, 1.5, 2.5, 2.5, 5, 5, 5, 5};
-  //double x_errors[] = {1, 1.5, 2.5, 2.5, 5, 10, 25};
-  //double x_errors[] = {2.5, 2.5, 2.5, 15};
-  //double x_errors[] = {22.5};
-  
-  double y_errors[] = {0, 0, 0, 0, 0, 0, 0, 0};
-  //double y_errors[] = {0, 0, 0, 0, 0, 0, 0};
-  //double y_errors[] = {0, 0, 0, 0};
-  //double y_errors[] = {0};
+  double y_errors[n_pt_bins];
+  double x_error_low[n_pt_bins];
+  double x_error_high[n_pt_bins];
 
   for(int i = 0; i < n_pt_bins; i++)
     {
       eff0 = efficiency0->GetEfficiency(i + 1);
       eff1 = efficiency1->GetEfficiency(i + 1);
       syst = (eff1 - eff0) / eff0;
-      cout << syst << endl;
       y_values[i] = syst;
+      y_errors[i] = 0;
+      x_error_low[i] = raw_yield->GetErrorXlow(i);
+      x_error_high[i] = raw_yield->GetErrorXhigh(i);
     }
 
-  TGraphErrors* systematic_errors = new TGraphErrors(n_pt_bins, x_values, y_values, x_errors, y_errors);
+  TGraphAsymmErrors* systematic_errors = new TGraphAsymmErrors(n_pt_bins, x_values, y_values, x_error_low, x_error_high, y_errors, y_errors);
   TCanvas c;
   systematic_errors->SetMarkerColor(4);
   systematic_errors->SetMarkerStyle(5);
+  systematic_errors->GetXaxis()->SetTitle("pT(GeV)");
   systematic_errors->Draw("AP");
   systematic_errors->SetTitle("BDT efficiency systematic error");
 
@@ -84,4 +73,5 @@ int main(){
   f1->ls();
   f1->Close();
   
+  return 0;  
 }
