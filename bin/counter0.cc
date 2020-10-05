@@ -20,12 +20,19 @@ int counter0(){
   TFile* f_mc_cuts = new TFile(input_f_mc_cuts);
   
   TString input_t = particle ? "ntphi" : "ntKp";
-  TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t);
+  TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t); 
 
   TString input_f_mc_nocuts = particle ? "/lstore/cms/nuno/ppdata2017/000926_nocut_flat/BsMC.root" : "/lstore/cms/nuno/ppdata2017/000906_nocut/BPMC_nobdt.root";
   TFile* f_mc_nocuts = new TFile(input_f_mc_nocuts);
+
   TTree* t_nocuts = (TTree*)f_mc_nocuts->Get(input_t);
- 
+
+  TString input_f_accept = particle ? "/lstore/cms/nuno/ppdata2017/000923_nocut/BsMC.root" : "/lstore/cms/nuno/ppdata2017/000923_nocut/BsMC.root";
+  TFile* f_accept = new TFile(input_f_accept);
+
+  TTree* t_accept = (TTree*)f_accept->Get("Bfinder/ntGen");  
+
+
   double pt_bins[] = {5, 10, 15, 20, 50};
   //double pt_bins[] = {5, 7, 10, 15, 20, 30, 50, 100};
   //double pt_binsh[] = {5, 7, 10, 15, 20, 30, 40, 50, 60};
@@ -40,6 +47,7 @@ int counter0(){
   TH1F* hist_tot_weights = new TH1F("hist_tot_weights", "hist_tot_weights", n_pt_bins, pt_bins);
   TH1F* hist_passed_weights = new TH1F("hist_passed_weights", "hist_passed_weights", n_pt_bins, pt_bins);
 
+  TH1F* hist_tot_gen = new TH1F("hist_tot_gen", "hist_tot_gen", n_pt_bins, pt_bins);
 
   float bpt1;
   /*
@@ -73,6 +81,7 @@ int counter0(){
   t_nocuts->SetBranchAddress("BDT_pt_15_20", &bdt_pt_15_20);
   t_nocuts->SetBranchAddress("BDT_pt_20_50", &bdt_pt_20_50);
   
+
   double weight = 1;
   double bdt1_total = 0;
 
@@ -115,9 +124,6 @@ int counter0(){
 
   //Bin by bin analysis of the BDT for Bs
   TString variable;
-  cout << "starting cycle without cuts" << endl;
-  cout << "no cuts entries = " << t_nocuts->GetEntries() << endl;
-  cout << "cuts entries = " << t_cuts->GetEntries() << endl;
 
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
@@ -143,7 +149,6 @@ int counter0(){
       hist_tot_weights->Fill(bpt1, weight);
       hist_tot_noweights->Fill(bpt1);
     }
-  cout << "ending cycle without cuts" << endl;
   /*    
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
       {
@@ -246,7 +251,6 @@ int counter0(){
 
   //Bin by bin analysis of the BDT for Bs
     TString variable2;
-    cout << "starting cycle with cuts" << endl;
 
     for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
     {
@@ -273,7 +277,6 @@ int counter0(){
       hist_passed_weights->Fill(bpt2, weight2);
       hist_passed_noweights->Fill(bpt2);
     }
-  cout << "ending cycle with cuts" << endl;
   /*
   //Analysis of Bpt
   for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
@@ -284,6 +287,28 @@ int counter0(){
       hist_passed_weights->Fill(bpt2, weight2);
       }
   */
+
+  float bpt3;
+
+  t_accept->SetBranchAddress("Gpt", &bpt3);
+
+  for(int evt = 0; evt < t_accept->GetEntries(); evt++){
+    t_accept->GetEntry(evt);
+
+    hist_tot_gen->Fill(bpt3);
+  }
+
+  if(particle == 0)
+    {
+      TCanvas tot_gen;
+      hist_tot_gen->Draw();
+      tot_gen.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/totgen.pdf");
+    }
+  else if(particle == 1){
+    TCanvas tot_gen;
+    hist_tot_gen->Draw();
+    tot_gen.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/totgen.pdf");
+  }
 
 
   if(particle == 0){
@@ -324,6 +349,17 @@ int counter0(){
     c1.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/efficiency1.pdf");
   }
   
+  TEfficiency* acceptance = new TEfficiency(*hist_tot_noweights, *hist_tot_gen);
+  if(particle == 0){
+    TCanvas c2;
+    acceptance->Draw("AP");
+    c2.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/acceptance.pdf");
+  }else if(particle == 1){
+    TCanvas c2;
+    acceptance->Draw("AP");
+    c2.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/acceptance.pdf");
+  }
+
   if(particle == 0){
     TFile* f0 = new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root" , "recreate");
     f0->cd();
@@ -338,6 +374,13 @@ int counter0(){
     f1->Write();
     f1->ls();
     f1->Close();
+
+    TFile* f2 = new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/acceptance.root", "recreate");
+    f2->cd();
+    acceptance->Write();
+    f2->Write();
+    f2->ls();
+    f2->Close();
     
   }else if(particle == 1){
     TFile* f0 = new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency0.root" , "recreate");
@@ -353,6 +396,13 @@ int counter0(){
     f1->Write();
     f1->ls();
     f1->Close();
+
+    TFile* f2 = new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/acceptance.root", "recreate");
+    f2->cd();
+    acceptance->Write();
+    f2->Write();
+    f2->ls();
+    f2->Close();
     
   }
   /*
@@ -373,6 +423,7 @@ int counter0(){
   delete hist_passed_noweights;
   delete hist_tot_weights;
   delete hist_passed_weights;
+  delete hist_tot_gen;
 
   f_mc_cuts->Close();
   delete f_mc_cuts;
