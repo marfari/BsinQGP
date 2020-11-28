@@ -12,7 +12,6 @@ using namespace std;
 #define particle 1 //0 = B+;   1 = Bs;
 
 int eff_syst(){
-  
   TFile* f_raw_yield = particle ?  new TFile("~/work2/BinQGP/results/Bs/Bpt/pT.root") : new TFile("~/work2/BinQGP/results/Bu/Bpt/pT.root");
   TGraphAsymmErrors* raw_yield = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;1");
   
@@ -49,13 +48,16 @@ int eff_syst(){
       x_error_high[i] = raw_yield->GetErrorXhigh(i);
     }
 
+  double pt_zero[n_pt_bins];
+  for (int i=0;i<n_pt_bins;i++) pt_zero[i]= 0.;
+
   TGraphAsymmErrors* systematic_errors = new TGraphAsymmErrors(n_pt_bins, x_values, y_values, x_error_low, x_error_high, y_errors, y_errors);
   TCanvas c;
   systematic_errors->SetMarkerColor(4);
   systematic_errors->SetMarkerStyle(5);
   systematic_errors->GetXaxis()->SetTitle("pT(GeV)");
   systematic_errors->Draw("AP");
-  systematic_errors->SetTitle("BDT efficiency systematic error");
+  systematic_errors->SetTitle("Efficiency systematic error");
 
   if (particle == 0){
      c.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/systematic_error.gif");

@@ -12,25 +12,26 @@ using namespace std;
 double read_weights(TString var, double var_value);
 double getWeight(double var_value, TH1D* h_weight);
 
-#define particle 0 //0 = B+;   1 = Bs;
+#define particle 1 //0 = B+;   1 = Bs;
 
 int counter0(){
   TFile* f_raw_yield = particle ?  new TFile("~/work2/BinQGP/results/Bs/Bpt/pT.root") : new TFile("~/work2/BinQGP/results/Bu/Bpt/pT.root");
   TGraphAsymmErrors* raw_yield = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;1");
 
-  TString input_f_mc_cuts = particle ? "/lstore/cms/nuno/ppdata2017/001120_nocut/TrkQualCut/BsMC.root" : "/lstore/cms/nuno/ppdata2017/001120_nocut/AnaCut/BPMC.root";
+  TString input_f_mc_cuts = particle ? "/lstore/cms/nuno/ppdata2017/001120_nocut/AnaCut/BsMC.root" : "/lstore/cms/nuno/ppdata2017/001120_nocut/AnaCut/BPMC.root";
   TFile* f_mc_cuts = new TFile(input_f_mc_cuts);
   
-  TString input_t = particle ? "ntphi" : "ntKp";
-  TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t); 
-
   TString input_f_mc_nocuts = particle ? "/lstore/cms/nuno/ppdata2017/001120_nocut/NoCut/BsMC.root" : "/lstore/cms/nuno/ppdata2017/001120_nocut/NoCut/BPMC.root";
+
   TFile* f_mc_nocuts = new TFile(input_f_mc_nocuts);
 
-  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get("ntKp"); 
+  TString input_t = particle ? "ntphi" : "ntKp";
+
+  TTree* t_cuts = (TTree*)f_mc_cuts->Get(input_t);
+  TTree* t_nocuts = (TTree*)f_mc_nocuts->Get(input_t); 
   TTree* t_gen = (TTree*)f_mc_nocuts->Get("ntGen");  
 
-  double pt_bins[] = {7,10,15,20,50};
+  double pt_bins[] = {5,10,15,20,50};
   const int n_pt_bins = raw_yield->GetN();
 
   TH1F* hist_tot_noweights = new TH1F("hist_tot_noweights", "hist_tot_noweights", n_pt_bins, pt_bins);
@@ -43,8 +44,8 @@ int counter0(){
 
   //NOCUTS 
   float bpt1;
-  float pthat_nocut;
-  float weight_nocut;
+  float pthat_nocuts;
+  float weight_nocuts;
 
   t_nocuts->SetBranchAddress("Bpt", &bpt1);
   t_nocuts->SetBranchAddress("pthat", &pthat_nocuts);
@@ -86,10 +87,8 @@ int counter0(){
 
   double weight = 1;
 
-  //Bin by bin analysis of the BDT for Bs
   TString variable;
   double bdt1_total = 0;
-
 
   for(int evt = 0; evt < t_nocuts->GetEntries(); evt++)
     {
@@ -118,8 +117,7 @@ int counter0(){
     }
  }
   
-
-    
+   
   if(particle == 0){
     TCanvas tot_noweights;
     hist_tot_noweights->Draw();
@@ -183,15 +181,14 @@ int counter0(){
   double weight2 = 1;
   double bdt2_total = 0;
 
-  //Bin by bin analysis of the BDT for Bs
-    TString variable2;
+  TString variable2;
 
-    for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
-    {
-      t_cuts->GetEntry(evt);
-        
-      for(int kk=0; kk<n_pt_bins; kk++){
-	if ( (bpt2 < pt_bins[kk]) || (bpt2 > pt_bins[kk+1]) )
+  for(int evt = 0; evt < t_cuts->GetEntries(); evt++)
+  {
+    t_cuts->GetEntry(evt);
+       
+    for(int kk=0; kk<n_pt_bins; kk++){
+       if ( (bpt2 < pt_bins[kk]) || (bpt2 > pt_bins[kk+1]) )
 	  continue;
 	variable2.Form("BDT_pt_%g_%g", pt_bins[kk], pt_bins[kk+1]);
 	if ((5<bpt2) && (bpt2<10))
@@ -238,19 +235,18 @@ int counter0(){
   
   t_gen->SetBranchAddress("Gpt", &bpt3);
   
-  for(int evt = 0; evt < t_accept->GetEntries(); evt++){
-    t_accept->GetEntry(evt);
+  for(int evt = 0; evt < t_gen->GetEntries(); evt++){
+    t_gen->GetEntry(evt);
   
     hist_tot_gen->Fill(bpt3);
   }
   
   
-  if(particle == 0)
-    {
-      TCanvas tot_gen;
-      hist_tot_gen->Draw();
-      tot_gen.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/totgen.pdf");
-    }
+  if(particle == 0){
+    TCanvas tot_gen;
+    hist_tot_gen->Draw();
+    tot_gen.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/totgen.pdf");
+  }
   else if(particle == 1){
     TCanvas tot_gen;
     hist_tot_gen->Draw();
@@ -266,7 +262,7 @@ int counter0(){
     c0.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/efficiency0.pdf");
   }else if(particle == 1){
     TCanvas c0;
-    efficiency0->SetTitle("Nominal Efficiency #epsilon^{0};p_{T} (GeV);#epsilon0");
+    efficiency0->SetTitle("Nominal Efficiency #epsilon^{0};p_{T} (GeV);#epsilon^{0}");
     efficiency0->Draw("AP");
     c0.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/efficiency0.pdf");
   }
@@ -289,17 +285,30 @@ int counter0(){
   TEfficiency* acceptance = new TEfficiency(*hist_tot_noweights, *hist_tot_gen);
   if(particle == 0){
     TCanvas c2;
-    acceptance->SetTitle("Factor that multiplied by eff0 gives eff*acc")
+    acceptance->SetTitle("Factor that multiplied by eff0 gives eff*acc");
     acceptance->Draw("AP");
     c2.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/acceptance.pdf");
   }else if(particle == 1){
     TCanvas c2;
-    acceptance->SetTitle("Factor that multiplied by eff0 gives eff*acc")
+    acceptance->SetTitle("Factor that multiplied by eff0 gives eff*acc");
     acceptance->Draw("AP");
     c2.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/acceptance.pdf");
   }
 
   //Then efficiency * acceptance = efficiency0*acceptance = (SC/GC) * (GC*G) = SC/G = hist_passed_weights/hist_tot_gen
+
+  TEfficiency* eff_x_acc = new TEfficiency(*hist_passed_noweights, *hist_tot_gen);
+  if(particle == 0){
+    TCanvas c3;
+    eff_x_acc->SetTitle("Efficiency x Acceptance");
+    eff_x_acc->Draw("AP");
+    c3.SaveAs("~/work2/BinQGP/results/Bu/efficiency/plots/eff_x_acc.pdf");
+  }else if(particle == 1){
+    TCanvas c3;
+    eff_x_acc->SetTitle("Efficiency x Acceptance");
+    eff_x_acc->Draw("AP");
+    c3.SaveAs("~/work2/BinQGP/results/Bs/efficiency/plots/eff_x_acc.pdf");
+  }
 
   if(particle == 0){
     TFile* f0 = new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency0.root" , "recreate");
@@ -322,7 +331,15 @@ int counter0(){
     f2->Write();
     f2->ls();
     f2->Close();
-    
+       
+    TFile* f3 = new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/eff_x_acc.root", "recreate");
+    f3->cd();
+    eff_x_acc->Write();
+    f3->Write();
+    f3->ls();
+    f3->Close();
+
+ 
   }else if(particle == 1){
     TFile* f0 = new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency0.root" , "recreate");
     f0->cd();
@@ -344,6 +361,13 @@ int counter0(){
     f2->Write();
     f2->ls();
     f2->Close(); 
+
+    TFile* f3 = new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/eff_x_acc.root", "recreate");
+    f3->cd();
+    eff_x_acc->Write();
+    f3->Write();
+    f3->ls();
+    f3->Close();
   }
   /*
   for(int i = 1; i < n_pt_bins + 1; i++)

@@ -70,7 +70,7 @@ using namespace std;
 void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x_sec, double* stat, double* syst);
 //void error_syst_final(double s_errors_bin);
 
-#define particle 1
+#define particle 0
 
 void x_section(){
 
@@ -82,6 +82,9 @@ void x_section(){
 
   //Efficiency systematic error files
   TFile* f_eff_syst = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/efficiency_systematic_errors.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/efficiency_systematic_errors.root");
+
+  //Acceptance files
+  TFile* f_acceptance = particle ? new TFile("~/work2/BinQGP/results/Bs/efficiency/root_files/acceptance.root") : new TFile("~/work2/BinQGP/results/Bu/efficiency/root_files/acceptance.root");
 	
   const double branching_fraction = particle ? 0.0000313 : 0.0000599;//check
   const double branching_fraction_error = particle ?  0.0000030 : 0.0000023; //absolute error
@@ -93,8 +96,9 @@ void x_section(){
   TGraphAsymmErrors* raw_yield = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;1"); //has absolute stat errors (y error bars)
   TGraphAsymmErrors* raw_yield_s = (TGraphAsymmErrors*)f_raw_yield->Get("Graph;2"); //has absolute syst errors (y error bars)
 
-  double* pt_bins = raw_yield->GetX();
+  double pt_bins[] = {7,10,15,20,50};
   const int n_pt_bins = raw_yield->GetN();
+  double *x_values = raw_yield->GetX();
 
   //efficiencies
   TEfficiency* efficiency = particle ? new TEfficiency("efficiency_Bs", "efficiency_Bs", n_pt_bins, pt_bins) : new TEfficiency("efficiency_Bu", "efficiency_Bu", n_pt_bins, pt_bins);
@@ -102,6 +106,10 @@ void x_section(){
 
   //systematic error
   TGraphErrors* efficiency_syst = (TGraphErrors*)f_eff_syst->Get("Graph");// has efficiencies syst errors (y values)
+
+  //acceptance
+  TEfficiency* acceptance = particle ? new TEfficiency("acceptance_Bs", "acceptance_Bs", n_pt_bins, pt_bins) : new TEfficiency("efficiency_Bu", "efficiency_Bu", n_pt_bins, pt_bins);
+  acceptance = (TEfficiency*)f_acceptance->Get("hist_tot_gen_clone");
 
   ///// VARIABLES /////
 
@@ -113,6 +121,7 @@ void x_section(){
 
   double n;
   double eff;
+  double acc;
   double x_sec0;
   double norm;
   double raw_stat;
@@ -127,30 +136,31 @@ void x_section(){
   double x_sec_syst[n_pt_bins]; //cross section syst error
 
   /// TABLE ///
-  cout << '|' << setw(15) << "Total Stat" << '|' << setw(15) << "Raw Syst" << '|' << setw(15) << "Eff Syst" << '|' << setw(15) << "Lumi Syst" << '|' << setw(15) << "Branch Syst" << '|' << setw(15) << "Squared Sum" << '|' << setw(15) << "Total Syst " << '|' << setw(15) << "Cross Section" << '|' << endl;
+  cout << '|' << setw(15) << "Total Stat" << '|' << setw(15) << "Raw Syst" << '|' << setw(15) << "Eff Syst" << '|' << setw(15) << "Efficiency" << '|' << setw(15) << "Acceptance" << '|' << setw(15) << "Lumi Syst" << '|' << setw(15) << "Total Syst " << '|' << setw(15) << "Branch syst" << '|' << endl;
 
 
   for(int i = 0; i < n_pt_bins; i++)
     {
       /// Central Value ///
       n = raw[i]; //yield value
-      eff = efficiency->GetEfficiency(i+1); //efficiency value
-      norm = eff*branching_fraction*luminosity;
+      eff = efficiency->GetEfficiency(i+1); 
+      acc = acceptance->GetEfficiency(i+1); 
+      norm = acc*eff*branching_fraction*luminosity;
       x_sec0 = n/norm; //cross section (central value)
       x_sec[i] = x_sec0; 
 
       /// Stat Error ///
       raw_stat = raw_yield->GetErrorY(i);
-      x_sec_stat[i] = raw_stat/(n*luminosity*branching_fraction); //relative, to make absolute divide by luminosity*branch
+      x_sec_stat[i] = (raw_stat/n)*x_sec0; //relative, to make absolute multiply by x_sec0
       
       /// Syst Error /// (relative)
       raw_syst = (raw_yield_s->GetErrorY(i))/n;
       eff_syst = fabs(eff_s[i]);
   
       tot_syst = raw_syst*raw_syst + eff_syst*eff_syst + lumi_syst*lumi_syst + branch_syst*branch_syst;
-      x_sec_syst[i] = sqrt(tot_syst)*x_sec0; //relative, to make absolute multiply by xsec0
+      x_sec_syst[i] = sqrt(tot_syst)*x_sec0; //relative, to make absolute multiply by x_sec0
 
-      cout << '|' << setw(15) << x_sec_stat[i] << '|' << setw(15) << raw_syst << '|' << setw(15) << eff_syst << '|' << setw(15) << lumi_syst << '|' << setw(15) << branch_syst << '|' << setw(15) << tot_syst << '|' << setw(15) << x_sec_syst[i] << '|' << setw(15) << x_sec[i] << '|' << endl;
+      cout << '|' << setw(15) << x_sec_stat[i]/x_sec0 << '|' << setw(15) << raw_syst << '|' << setw(15) << eff_syst << '|' << setw(15) << eff << '|' << setw(15) << acc << '|' << setw(15) << lumi_syst << '|' << setw(15) << x_sec_syst[i]/x_sec0 << '|' << setw(15) << branch_syst << '|' << endl;
       
     }
 
@@ -171,8 +181,7 @@ void x_section(){
       syst_errors[3][i] = 0.0000023;
     }
   */
- 
-  plot_xsection(n_pt_bins, pt_bins, raw_errX_low, raw_errX_high, x_sec, x_sec_stat, x_sec_syst); 
+  plot_xsection(n_pt_bins, x_values, raw_errX_low, raw_errX_high, x_sec, x_sec_stat, x_sec_syst); 
 }
  
 
@@ -180,14 +189,14 @@ void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x
   TCanvas c;
   TMultiGraph* mg = new TMultiGraph();
   
+  double pt_zero[bin_n];
+  for (int i=0;i<bin_n;i++) pt_zero[i]= 0.;
+
   TGraphAsymmErrors* g_stat = new TGraphAsymmErrors(bin_n,pt_m,x_sec,pt_l,pt_h,stat,stat);
   g_stat->SetTitle("");
   g_stat->SetMarkerColor(4);
   g_stat->SetMarkerStyle(1);
-  g_stat->SetLineColor(1);
-  
-  double pt_zero[bin_n];
-  for (int i=0;i<bin_n;i++) pt_zero[i]= 0.;
+  g_stat->SetLineColor(1); 
   
   TGraphAsymmErrors* g_syst= new TGraphAsymmErrors(bin_n,pt_m,x_sec,pt_zero,pt_zero,syst,syst);
   g_syst->SetTitle("");
@@ -195,16 +204,25 @@ void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x
   g_syst->SetMarkerStyle(1);
   g_syst->SetLineColor(2);  
 
+
   TFile* f = particle ? new TFile("~/work2/BinQGP/results/Bs/x_section/x_section.root", "recreate") : new TFile("~/work2/BinQGP/results/Bu/x_section/x_section.root", "recreate");
   f->cd();
- 
+   
   mg->Add(g_stat);
   mg->Add(g_syst);
+
+  TLegend *leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+  leg->SetFillColor(0);
+  leg->AddEntry(g_stat, "Statistical Uncertainty", "lp");
+  leg->AddEntry(g_syst, "Systematic Uncertainty", "lp");
+
   mg->Draw("AP");
+  leg->Draw();
   mg->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
-  mg->GetYaxis()->SetTitle("#frac{d#sigma}{dp_{T}} [pb/GeV]");
+  mg->GetYaxis()->SetTitle("d#sigma/dp_{T} [pb/GeV]");
  
-  f->Write();
+
+  mg->Write();
 
   if (particle == 0){
      c.SaveAs("~/work2/BinQGP/results/Bu/x_section/x_section.gif");
@@ -214,6 +232,7 @@ void plot_xsection(int bin_n,double* pt_m, double* pt_l, double* pt_h, double* x
      c.SaveAs("~/work2/BinQGP/results/Bs/x_section/x_section.gif");
      c.SaveAs("~/work2/BinQGP/results/Bs/x_section/x_section.pdf");
   }
+
   f->Close();
 }
 
