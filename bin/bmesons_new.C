@@ -97,7 +97,7 @@ void fit_syst_error_bin(TString, double a, double b);
 // 0 = Bu
 // 1 = Bs
 
-#define particle 1
+#define particle 0
 
 //weights
 // 1 = calculates ratio between MC and sPlot 
@@ -159,9 +159,8 @@ void bmesons_new(){
     //validate_fit(ws);
     pT_analysis(*ws,n_bins[0], "pT.root", input_file_data);
   }
-  return;
   //if(!DATA_CUT){fit_syst_error(input_file_data);}
- 
+  return;
   //sideband_sub histograms
   histos_sideband_sub = sideband_subtraction(ws, n_bins, n_var);
  
@@ -466,7 +465,7 @@ void pT_analysis(RooWorkspace& w, int n, TString ptfile, TString datafile){
 
 #if particle == 0
   const int n_pt_bins = 4;
-  double pt_bins [n_pt_bins + 1] = {7,10,15,20,50};  
+  double pt_bins [n_pt_bins + 1] = {5,10,15,20,50};  
 #elif particle == 1
   const int n_pt_bins = 4;
   double pt_bins[n_pt_bins + 1] = {5,10,15,20,50};
@@ -693,6 +692,8 @@ void pT_analysis(RooWorkspace& w, int n, TString ptfile, TString datafile){
 }
 
     yield_err_syst[i] = pow(yield_syst[i][0],2) + pow(yield_syst[i][1],2) + pow(yield_syst[i][2],2) + pow(yield_syst[i][3],2);
+    //yield_err_syst[i] = pow(yield_syst[i][0],2) + pow(yield_syst[i][2],2) + pow(yield_syst[i][3],2);
+ 
     m_yield_err_syst[i] = sqrt(yield_err_syst[i]);
  
     }
@@ -840,9 +841,10 @@ void pT_analysis(RooWorkspace& w, int n, TString ptfile, TString datafile){
   //evaluates the N systematics for each bin
   //for(int i=0;i<n_pt_bins;i++){
   // fit_syst_error_bin(datafile, pt_bins[i], pt_bins[i+1]);
-  // }
-   
-   cout << '|' << setw(15) << "Pdf" << '|' << setw(15) << "7-10" << '|' << setw(15) << "10-15" << '|' << setw(15) << "15-20" << '|' << setw(15) << "20-50" << '|' << endl;
+  // }  
+
+
+   cout << '|' << setw(15) << "Pdf" << '|' << setw(15) << "5-10" << '|' << setw(15) << "10-15" << '|' << setw(15) << "15-20" << '|' << setw(15) << "20-50" << '|' << endl;
    cout << '|' << setw(15) << "Nominal" << '|' << setw(15) << yield_syst_rel[0][0] << '|' << setw(15) << yield_syst_rel[1][0] << '|' << setw(15) << yield_syst_rel[2][0] << '|' << setw(15) << yield_syst_rel[3][0] << '|' << endl;
    cout << '|' << setw(15) << "Bkg_poly" << '|' << setw(15) << yield_syst_rel[0][1] << '|' << setw(15) << yield_syst_rel[1][1] << '|' << setw(15) << yield_syst_rel[2][1] << '|' << setw(15) << yield_syst_rel[3][1] << '|' << endl;
    cout << '|' << setw(15) << "Signal1gauss" << '|' << setw(15) << yield_syst_rel[0][2] << '|' << setw(15) << yield_syst_rel[1][2] << '|' << setw(15) << yield_syst_rel[2][2] << '|' << setw(15) << yield_syst_rel[3][2] << '|' << endl;
@@ -2554,14 +2556,14 @@ void set_up_workspace_variables(RooWorkspace& w)
     y_min = -2.4;
     y_max = 2.4;
 
-    pt_min = 5.;
+    pt_min = 0.;
     pt_max = 100.;
 
-    trk1pt_min = 1.;
-    trk1pt_max = 50;
+    trk1pt_min = 0.;
+    trk1pt_max = 100.;
 
-    trk2pt_min = 1.;
-    trk2pt_max = 50.;
+    trk2pt_min = 0.;
+    trk2pt_max = 100.;
 
     trk1eta_min = -2.4;
     trk1eta_max = 2.4;
@@ -2599,11 +2601,11 @@ void set_up_workspace_variables(RooWorkspace& w)
     mu2eta_min = -2.4;
     mu2eta_max = 2.4;
 
-    mu1pt_min = 1.;
-    mu1pt_max = 60.;
+    mu1pt_min = 0.;
+    mu1pt_max = 100.;
 
-    mu2pt_min = 1.;
-    mu2pt_max = 60.;
+    mu2pt_min = 0.;
+    mu2pt_max = 100.;
 
     mu1dxyPV_min = -0.3;
     mu1dxyPV_max = 0.3;
@@ -2659,7 +2661,7 @@ void set_up_workspace_variables(RooWorkspace& w)
     mumuphi_min = -3.1;
     mumuphi_max = 3.1;
 
-    mumupt_min = 1.;
+    mumupt_min = 0.;
     mumupt_max = 100.;
     
     BDT_5_10_min = 0.;
