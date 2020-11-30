@@ -71,20 +71,14 @@ void frag_ratio(){
 
    ratio[i] = xsec_Bs[i]/xsec_Bu[i];
 
-   Dx = 1/xsec_Bs[i];
-   Dy = xsec_Bu[i]/(xsec_Bs[i]*xsec_Bs[i]);
+   Dx = 1/xsec_Bu[i];
+   Dy = xsec_Bs[i]/(xsec_Bu[i]*xsec_Bu[i]);
  
    
-   ratio_syst_low[i] = sqrt(pow(Dx,2)*pow(syst_Bu_low,2)+pow(Dy,2)*pow(syst_Bs_low,2));   
-   ratio_syst_high[i] = sqrt(pow(Dx,2)*pow(syst_Bu_high,2)+pow(Dy,2)*pow(syst_Bs_high,2));
-   ratio_stat_low[i] = sqrt(pow(Dx,2)*pow(stat_Bu_low,2)+pow(Dy,2)*pow(stat_Bs_low,2));
-   ratio_stat_high[i] = sqrt(pow(Dx,2)*pow(stat_Bu_high,2)+pow(Dy,2)*pow(stat_Bs_high,2));
-   /*
-   ratio_syst_low[i] = 0.;
-   ratio_syst_high[i] = 0.;
-   ratio_stat_low[i] = 0.;
-   ratio_stat_high[i] = 0.;
-   */
+   ratio_syst_low[i] = sqrt(pow(Dx,2)*pow(syst_Bs_low,2)+pow(Dy,2)*pow(syst_Bu_low,2));   
+   ratio_syst_high[i] = sqrt(pow(Dx,2)*pow(syst_Bs_high,2)+pow(Dy,2)*pow(syst_Bu_high,2));
+   ratio_stat_low[i] = sqrt(pow(Dx,2)*pow(stat_Bs_low,2)+pow(Dy,2)*pow(stat_Bu_low,2));
+   ratio_stat_high[i] = sqrt(pow(Dx,2)*pow(stat_Bs_high,2)+pow(Dy,2)*pow(stat_Bu_high,2));
  }
 
 
@@ -115,7 +109,7 @@ void frag_ratio(){
   leg->Draw();
   mg->GetXaxis()->SetTitle("p_{T}(B) [GeV]");
   mg->GetYaxis()->SetTitle("Fragmentation Ratio f_{s}/f_{u}");
-  //mg->GetYaxis()->SetRangeUser(0.,0.4);
+  mg->GetYaxis()->SetRangeUser(0.,0.4);
  
   c.SaveAs("~/work2/BinQGP/results/frag_ratio.gif");
   c.SaveAs("~/work2/BinQGP/results/frag_ratio.pdf");
